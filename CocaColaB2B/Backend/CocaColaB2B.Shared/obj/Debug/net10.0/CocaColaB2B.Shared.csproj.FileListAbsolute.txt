@@ -1,0 +1,12 @@
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/bin/Debug/net10.0/CocaColaB2B.Shared.deps.json
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/bin/Debug/net10.0/CocaColaB2B.Shared.dll
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/bin/Debug/net10.0/CocaColaB2B.Shared.pdb
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/obj/Debug/net10.0/CocaColaB2B.Shared.GeneratedMSBuildEditorConfig.editorconfig
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/obj/Debug/net10.0/CocaColaB2B.Shared.AssemblyInfoInputs.cache
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/obj/Debug/net10.0/CocaColaB2B.Shared.AssemblyInfo.cs
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/obj/Debug/net10.0/CocaColaB2B.Shared.csproj.CoreCompileInputs.cache
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/obj/Debug/net10.0/CocaColaB2B.Shared.sourcelink.json
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/obj/Debug/net10.0/CocaColaB2B.Shared.dll
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/obj/Debug/net10.0/refint/CocaColaB2B.Shared.dll
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/obj/Debug/net10.0/CocaColaB2B.Shared.pdb
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/obj/Debug/net10.0/ref/CocaColaB2B.Shared.dll

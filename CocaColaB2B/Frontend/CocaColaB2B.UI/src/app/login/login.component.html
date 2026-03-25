@@ -1,0 +1,44 @@
+<div class="login-container">
+  <div class="login-wrapper glass-panel">
+    
+    <div class="brand-header">
+      <div class="logo-circle">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="brand-icon">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor"/>
+          <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1>Coca-Cola B2B</h1>
+      <p>Enterprise Inventory Management</p>
+    </div>
+
+    <div *ngIf="error" class="error-banner">
+      {{ error }}
+    </div>
+
+    <form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-input" formControlName="email" placeholder="admin@cocacola.com" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" formControlName="password" placeholder="••••••••" />
+      </div>
+
+      <div class="forgot-password">
+        <a href="#">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="btn-primary" style="width: 100%;" [disabled]="isLoading">
+        {{ isLoading ? 'Authenticating...' : 'Sign In to Portal' }}
+      </button>
+    </form>
+    
+    <div class="system-status">
+      <span class="status-dot"></span> Secure Connection Active
+    </div>
+  </div>
+</div>

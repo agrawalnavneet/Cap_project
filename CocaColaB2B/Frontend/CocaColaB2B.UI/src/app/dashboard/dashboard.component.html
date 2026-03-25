@@ -1,0 +1,60 @@
+<div class="dashboard-layout">
+  <nav class="sidebar glass-panel">
+    <div class="sidebar-header">
+      <div class="logo-mark">CC</div>
+      <h2>B2B Portal</h2>
+    </div>
+
+    <ul>
+      <li *ngFor="let item of menuItems"
+          [routerLink]="item.path"
+          routerLinkActive="active">
+        <span class="menu-icon">{{ item.icon }}</span>
+        {{ item.label }}
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="avatar">{{ (user?.fullName || user?.FullName || 'U')[0] }}</div>
+        <div class="user-meta">
+          <span class="user-name">{{ user?.fullName || user?.FullName || 'User' }}</span>
+          <span class="user-role">{{ user?.role || user?.Role }}</span>
+        </div>
+      </div>
+      <button (click)="logout()" class="btn-logout">
+        <span>↪</span> Logout
+      </button>
+    </div>
+  </nav>
+
+  <main class="content">
+    <header class="top-bar">
+      <h1>{{ menuItems.length > 0 ? '' : 'Dashboard' }}</h1>
+      <div class="top-actions">
+        <div class="notification-bell" (click)="toggleNotifications()">
+          🔔
+          <span class="badge-count" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+        </div>
+        <span class="role-badge">{{ user?.role || user?.Role }}</span>
+      </div>
+    </header>
+
+    <!-- Notification Dropdown -->
+    <div class="notification-dropdown glass-panel" *ngIf="showNotifications">
+      <div class="notif-header">
+        <h3>Notifications</h3>
+        <button (click)="markAllRead()" class="btn-text">Mark all read</button>
+      </div>
+      <div class="notif-list">
+        <div *ngFor="let n of notifications" class="notif-item" [class.unread]="!n.isRead">
+          <p>{{ n.message }}</p>
+          <small>{{ n.createdAt | date:'short' }}</small>
+        </div>
+        <div *ngIf="notifications.length === 0" class="empty-notif">No notifications</div>
+      </div>
+    </div>
+
+    <router-outlet></router-outlet>
+  </main>
+</div>

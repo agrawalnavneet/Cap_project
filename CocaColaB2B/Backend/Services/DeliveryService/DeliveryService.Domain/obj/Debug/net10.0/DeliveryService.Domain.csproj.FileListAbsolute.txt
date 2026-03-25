@@ -1,0 +1,16 @@
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/DeliveryService/DeliveryService.Domain/bin/Debug/net10.0/DeliveryService.Domain.deps.json
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/DeliveryService/DeliveryService.Domain/bin/Debug/net10.0/DeliveryService.Domain.dll
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/DeliveryService/DeliveryService.Domain/bin/Debug/net10.0/DeliveryService.Domain.pdb
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/DeliveryService/DeliveryService.Domain/bin/Debug/net10.0/CocaColaB2B.Shared.dll
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/DeliveryService/DeliveryService.Domain/bin/Debug/net10.0/CocaColaB2B.Shared.pdb
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/DeliveryService/DeliveryService.Domain/obj/Debug/net10.0/DeliveryService.Domain.csproj.AssemblyReference.cache
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/DeliveryService/DeliveryService.Domain/obj/Debug/net10.0/DeliveryService.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/DeliveryService/DeliveryService.Domain/obj/Debug/net10.0/DeliveryService.Domain.AssemblyInfoInputs.cache
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/DeliveryService/DeliveryService.Domain/obj/Debug/net10.0/DeliveryService.Domain.AssemblyInfo.cs
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/DeliveryService/DeliveryService.Domain/obj/Debug/net10.0/DeliveryService.Domain.csproj.CoreCompileInputs.cache
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/DeliveryService/DeliveryService.Domain/obj/Debug/net10.0/DeliveryService.Domain.sourcelink.json
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/DeliveryService/DeliveryService.Domain/obj/Debug/net10.0/Delivery.66C35356.Up2Date
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/DeliveryService/DeliveryService.Domain/obj/Debug/net10.0/DeliveryService.Domain.dll
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/DeliveryService/DeliveryService.Domain/obj/Debug/net10.0/refint/DeliveryService.Domain.dll
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/DeliveryService/DeliveryService.Domain/obj/Debug/net10.0/DeliveryService.Domain.pdb
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/DeliveryService/DeliveryService.Domain/obj/Debug/net10.0/ref/DeliveryService.Domain.dll

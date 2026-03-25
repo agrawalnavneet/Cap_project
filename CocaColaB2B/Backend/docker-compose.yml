@@ -1,0 +1,138 @@
+version: '3.8'
+
+services:
+  # ── Infrastructure ──
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Password
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  # ── Microservices ──
+  auth-service:
+    build:
+      context: .
+      dockerfile: Services/AuthService/Dockerfile
+    ports:
+      - "5301:5301"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Auth;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True
+    depends_on:
+      - sqlserver
+
+  product-service:
+    build:
+      context: .
+      dockerfile: Services/ProductService/Dockerfile
+    ports:
+      - "5302:5302"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Products;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True
+      - ConnectionStrings__RedisCache=redis:6379
+    depends_on:
+      - sqlserver
+      - redis
+
+  order-service:
+    build:
+      context: .
+      dockerfile: Services/OrderService/Dockerfile
+    ports:
+      - "5303:5303"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Orders;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True
+      - RabbitMQ__Host=rabbitmq
+    depends_on:
+      - sqlserver
+      - rabbitmq
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: Services/InventoryService/Dockerfile
+    ports:
+      - "5304:5304"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Inventory;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True
+      - RabbitMQ__Host=rabbitmq
+    depends_on:
+      - sqlserver
+      - rabbitmq
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: Services/NotificationService/Dockerfile
+    ports:
+      - "5305:5305"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Notifications;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True
+      - RabbitMQ__Host=rabbitmq
+    depends_on:
+      - sqlserver
+      - rabbitmq
+
+  delivery-service:
+    build:
+      context: .
+      dockerfile: Services/DeliveryService/Dockerfile
+    ports:
+      - "5306:5306"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Delivery;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True
+      - RabbitMQ__Host=rabbitmq
+    depends_on:
+      - sqlserver
+      - rabbitmq
+
+  # ── API Gateway ──
+  gateway:
+    build:
+      context: .
+      dockerfile: Gateway/Dockerfile
+    ports:
+      - "5007:5000" # ✅ FIXED HERE
+    depends_on:
+      - auth-service
+      - product-service
+      - order-service
+      - inventory-service
+      - notification-service
+      - delivery-service
+
+  # ── DevOps ──
+  sonarqube:
+    image: sonarqube:community
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - sonar-data:/opt/sonarqube/data
+      - sonar-extensions:/opt/sonarqube/extensions
+
+volumes:
+  sql-data:
+  sonar-data:
+  sonar-extensions:
