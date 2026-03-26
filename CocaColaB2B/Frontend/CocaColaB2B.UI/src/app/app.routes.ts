@@ -16,7 +16,9 @@ export const routes: Routes = [
       { path: 'categories', loadComponent: () => import('./dashboard/admin-categories/admin-categories.component').then(m => m.AdminCategoriesComponent) },
       { path: 'wholesaler-catalog', loadComponent: () => import('./dashboard/wholesaler-catalog/wholesaler-catalog.component').then(m => m.WholesalerCatalogComponent) },
       { path: 'warehouse-manager', loadComponent: () => import('./dashboard/warehouse-manager/warehouse-manager.component').then(m => m.WarehouseManagerComponent) },
-      { path: 'driver-panel', loadComponent: () => import('./dashboard/driver-panel/driver-panel.component').then(m => m.DriverPanelComponent) }
+      { path: 'driver-panel', loadComponent: () => import('./dashboard/driver-panel/driver-panel.component').then(m => m.DriverPanelComponent) },
+      { path: 'cart', loadComponent: () => import('./dashboard/wholesaler-cart/wholesaler-cart.component').then(m => m.WholesalerCartComponent) },
+      { path: 'my-orders', loadComponent: () => import('./dashboard/wholesaler-orders/wholesaler-orders.component').then(m => m.WholesalerOrdersComponent) }
     ]
   }
 ];

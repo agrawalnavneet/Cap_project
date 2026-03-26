@@ -43,7 +43,7 @@
 
 .brand-header {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 32px;
 }
 
 .logo-circle {
@@ -76,6 +76,69 @@
   font-size: 0.95rem;
 }
 
+/* Tab Switcher */
+.tab-switcher {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.tab-switcher button {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.6);
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.tab-switcher button:hover {
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+.tab-switcher button.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* Toggle text */
+.toggle-text {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.4);
+}
+
+.toggle-text a {
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.toggle-text a:hover {
+  opacity: 0.8;
+}
+
+/* Success Banner */
+.success-banner {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+}
+
 .forgot-password {
   text-align: right;
   margin-bottom: 24px;
@@ -92,8 +155,12 @@
   color: white;
 }
 
+.full-width {
+  width: 100%;
+}
+
 .system-status {
-  margin-top: 32px;
+  margin-top: 28px;
   text-align: center;
   font-size: 0.75rem;
   color: var(--text-secondary);

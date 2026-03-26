@@ -52,7 +52,7 @@ export class DashboardComponent implements OnInit {
         break;
       case 'Wholesaler':
         this.menuItems = [
-          { label: 'Catalog', path: '/dashboard/catalog', icon: '🛍️' },
+          { label: 'Catalog', path: '/dashboard/wholesaler-catalog', icon: '🛍️' },
           { label: 'My Cart', path: '/dashboard/cart', icon: '🛒' },
           { label: 'My Orders', path: '/dashboard/my-orders', icon: '📋' },
         ];
