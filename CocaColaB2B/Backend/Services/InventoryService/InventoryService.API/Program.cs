@@ -29,7 +29,8 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-builder.Services.AddDbContext<InventoryDbContext>(o => o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<InventoryDbContext>(o => o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+    sqlOptions => sqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null)));
 
 builder.Services.AddMassTransit(x =>
 {
@@ -52,23 +53,34 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 builder.Services.AddCors(o => o.AddPolicy("All", p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
 var app = builder.Build();
-using (var scope = app.Services.CreateScope())
+for (int i = 0; i < 10; i++)
 {
-    var db = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
-    db.Database.EnsureCreated();
-    if (!db.Inventories.Any())
+    try
     {
-        db.Inventories.AddRange(
-            new InventoryEntity { ProductName = "Coca-Cola Classic", ProductSKU = "CC-001", QuantityInStock = 5000, ReorderLevel = 500 },
-            new InventoryEntity { ProductName = "Diet Coke", ProductSKU = "DC-002", QuantityInStock = 3000, ReorderLevel = 300 },
-            new InventoryEntity { ProductName = "Coca-Cola Zero", ProductSKU = "CZ-003", QuantityInStock = 4000, ReorderLevel = 400 },
-            new InventoryEntity { ProductName = "Sprite", ProductSKU = "SP-004", QuantityInStock = 3500, ReorderLevel = 350 },
-            new InventoryEntity { ProductName = "Fanta Orange", ProductSKU = "FO-005", QuantityInStock = 2800, ReorderLevel = 280 },
-            new InventoryEntity { ProductName = "Minute Maid", ProductSKU = "MM-006", QuantityInStock = 2000, ReorderLevel = 200 },
-            new InventoryEntity { ProductName = "Dasani Water", ProductSKU = "DW-007", QuantityInStock = 10000, ReorderLevel = 1000 },
-            new InventoryEntity { ProductName = "Monster Energy", ProductSKU = "ME-008", QuantityInStock = 80, ReorderLevel = 150 }
-        );
-        db.SaveChanges();
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
+        db.Database.EnsureCreated();
+        if (!db.Inventories.Any())
+        {
+            db.Inventories.AddRange(
+                new InventoryEntity { ProductName = "Coca-Cola Classic", ProductSKU = "CC-001", QuantityInStock = 5000, ReorderLevel = 500 },
+                new InventoryEntity { ProductName = "Diet Coke", ProductSKU = "DC-002", QuantityInStock = 3000, ReorderLevel = 300 },
+                new InventoryEntity { ProductName = "Coca-Cola Zero", ProductSKU = "CZ-003", QuantityInStock = 4000, ReorderLevel = 400 },
+                new InventoryEntity { ProductName = "Sprite", ProductSKU = "SP-004", QuantityInStock = 3500, ReorderLevel = 350 },
+                new InventoryEntity { ProductName = "Fanta Orange", ProductSKU = "FO-005", QuantityInStock = 2800, ReorderLevel = 280 },
+                new InventoryEntity { ProductName = "Minute Maid", ProductSKU = "MM-006", QuantityInStock = 2000, ReorderLevel = 200 },
+                new InventoryEntity { ProductName = "Dasani Water", ProductSKU = "DW-007", QuantityInStock = 10000, ReorderLevel = 1000 },
+                new InventoryEntity { ProductName = "Monster Energy", ProductSKU = "ME-008", QuantityInStock = 80, ReorderLevel = 150 }
+            );
+            db.SaveChanges();
+        }
+        break;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"DB not ready (attempt {i + 1}/10): {ex.Message}");
+        if (i == 9) throw;
+        await Task.Delay(5000);
     }
 }
 

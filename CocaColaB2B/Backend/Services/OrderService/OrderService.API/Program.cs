@@ -34,7 +34,8 @@ builder.Services.AddSignalR();
 
 // Infrastructure: DB Context
 builder.Services.AddDbContext<OrderDbContext>(o => 
-    o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null)));
 
 // Infrastructure: Repositories
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
@@ -73,10 +74,21 @@ builder.Services.AddCors(o => o.AddPolicy("All", p => p.AllowAnyOrigin().AllowAn
 
 var app = builder.Build();
 
-// Ensure DB Created
-using (var scope = app.Services.CreateScope()) 
-{ 
-    scope.ServiceProvider.GetRequiredService<OrderDbContext>().Database.EnsureCreated(); 
+// Ensure DB Created with retry
+for (int i = 0; i < 10; i++)
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        scope.ServiceProvider.GetRequiredService<OrderDbContext>().Database.EnsureCreated();
+        break;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"DB not ready (attempt {i + 1}/10): {ex.Message}");
+        if (i == 9) throw;
+        await Task.Delay(5000);
+    }
 }
 
 if (app.Environment.IsDevelopment()) 

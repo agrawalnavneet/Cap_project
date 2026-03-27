@@ -6,22 +6,39 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrong@Password
+      - SA_PASSWORD=Agarwal@15
     ports:
       - "1433:1433"
     volumes:
       - sql-data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Agarwal@15" -Q "SELECT 1" -C -b || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   redis:
     image: redis:alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   # ── Microservices ──
   auth-service:
@@ -32,9 +49,11 @@ services:
       - "5301:5301"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Auth;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Auth;User Id=sa;Password=Agarwal@15;TrustServerCertificate=True
     depends_on:
-      - sqlserver
+      sqlserver:
+        condition: service_healthy
+    restart: on-failure
 
   product-service:
     build:
@@ -44,11 +63,14 @@ services:
       - "5302:5302"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Products;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Products;User Id=sa;Password=Agarwal@15;TrustServerCertificate=True
       - ConnectionStrings__RedisCache=redis:6379
     depends_on:
-      - sqlserver
-      - redis
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: on-failure
 
   order-service:
     build:
@@ -58,11 +80,14 @@ services:
       - "5303:5303"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Orders;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Orders;User Id=sa;Password=Agarwal@15;TrustServerCertificate=True
       - RabbitMQ__Host=rabbitmq
     depends_on:
-      - sqlserver
-      - rabbitmq
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
 
   inventory-service:
     build:
@@ -72,11 +97,14 @@ services:
       - "5304:5304"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Inventory;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Inventory;User Id=sa;Password=Agarwal@15;TrustServerCertificate=True
       - RabbitMQ__Host=rabbitmq
     depends_on:
-      - sqlserver
-      - rabbitmq
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
 
   notification-service:
     build:
@@ -86,11 +114,14 @@ services:
       - "5305:5305"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Notifications;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Notifications;User Id=sa;Password=Agarwal@15;TrustServerCertificate=True
       - RabbitMQ__Host=rabbitmq
     depends_on:
-      - sqlserver
-      - rabbitmq
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
 
   delivery-service:
     build:
@@ -100,11 +131,14 @@ services:
       - "5306:5306"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Delivery;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Delivery;User Id=sa;Password=Agarwal@15;TrustServerCertificate=True
       - RabbitMQ__Host=rabbitmq
     depends_on:
-      - sqlserver
-      - rabbitmq
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
 
   # ── API Gateway ──
   gateway:
@@ -114,14 +148,21 @@ services:
     ports:
       - "5010:5000"
     environment:
-      - ASPNETCORE_HTTP_PORTS=5000
+      - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
-      - auth-service
-      - product-service
-      - order-service
-      - inventory-service
-      - notification-service
-      - delivery-service
+      auth-service:
+        condition: service_started
+      product-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      delivery-service:
+        condition: service_started
+    restart: on-failure
 
   # ── DevOps ──
   sonarqube:

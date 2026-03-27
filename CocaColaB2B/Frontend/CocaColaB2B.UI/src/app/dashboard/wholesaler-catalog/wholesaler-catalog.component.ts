@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { Product, Category } from '../../models/models';
 
@@ -89,7 +90,18 @@ export class WholesalerCatalogComponent implements OnInit {
   constructor(private api: ApiService) {}
 
   ngOnInit() {
-    this.api.getProducts().subscribe(p => { this.products = p; this.filteredProducts = p; p.forEach(x => this.quantities[x.id] = 1); });
+    // Fetch products AND inventory in parallel, then merge stock data by SKU
+    forkJoin({
+      products: this.api.getProducts(),
+      inventory: this.api.getInventory()
+    }).subscribe(({ products, inventory }) => {
+      this.products = products.map(p => {
+        const inv = inventory.find(i => i.productSKU === p.sku);
+        return { ...p, quantityInStock: inv ? inv.quantityInStock : p.quantityInStock };
+      });
+      this.filteredProducts = this.products;
+      this.products.forEach(x => this.quantities[x.id] = 1);
+    });
     this.api.getCategories().subscribe(c => this.categories = c);
   }
 

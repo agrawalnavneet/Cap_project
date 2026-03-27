@@ -135,7 +135,7 @@
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "http://localhost:5000",
+    "BaseUrl": "http://gateway:5000",
     "DownstreamScheme": "http"
   }
 }

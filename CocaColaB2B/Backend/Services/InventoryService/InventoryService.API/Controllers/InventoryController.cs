@@ -11,7 +11,7 @@ namespace InventoryService.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin,WarehouseManager")]
+[Authorize]
 public class InventoryController : ControllerBase
 {
     private readonly InventoryDbContext _db;
@@ -34,6 +34,7 @@ public class InventoryController : ControllerBase
     }
 
     [HttpPut("{productId}")]
+    [Authorize(Roles = "Admin,WarehouseManager")]
     public async Task<ActionResult> UpdateStock(Guid productId, UpdateStockRequest req)
     {
         var inv = await _db.Inventories.FirstOrDefaultAsync(i => i.ProductId == productId);
