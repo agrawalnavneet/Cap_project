@@ -27,7 +27,7 @@ import { Order } from '../../models/models';
             <span class="order-date">{{ order.orderDate | date:'mediumDate' }}</span>
           </div>
           <div class="order-right">
-            <span class="order-total">\${{ order.totalAmount | number:'1.2-2' }}</span>
+            <span class="order-total">₹{{ order.totalAmount | number:'1.2-2' }}</span>
             <span class="status-badge" [attr.data-status]="order.status">{{ order.status }}</span>
           </div>
         </div>
@@ -65,7 +65,7 @@ import { Order } from '../../models/models';
                 <span class="item-qty">x{{ item.quantity }}</span>
               </div>
             </div>
-            <span class="item-price">\${{ item.totalPrice | number:'1.2-2' }}</span>
+            <span class="item-price">₹{{ item.totalPrice | number:'1.2-2' }}</span>
           </div>
           <div class="order-footer">
             <span>Shipping: {{ order.shippingAddress || 'N/A' }}</span>

@@ -37,7 +37,7 @@ import { Product, Category } from '../../models/models';
               <div class="desc">{{ product.description }}</div>
             </td>
             <td><span class="category-label">{{ product.categoryName || '-' }}</span></td>
-            <td class="price">\${{ product.price | number:'1.2-2' }}</td>
+            <td class="price">₹{{ product.price | number:'1.2-2' }}</td>
             <td class="actions">
               <button class="btn-icon" (click)="openEditModal(product)">✎</button>
               <button class="btn-icon delete" (click)="deleteProduct(product.id)">🗑</button>

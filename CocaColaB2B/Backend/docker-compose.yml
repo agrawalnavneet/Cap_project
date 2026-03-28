@@ -4,6 +4,7 @@ services:
   # ── Infrastructure ──
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=Agarwal@15

@@ -32,7 +32,7 @@ import { Order, User } from '../../models/models';
           <tr *ngFor="let order of filteredOrders">
             <td class="mono">{{ order.id.substring(0,8) }}</td>
             <td>{{ order.wholesalerName }}</td>
-            <td class="price">\${{ order.totalAmount | number:'1.2-2' }}</td>
+            <td class="price">₹{{ order.totalAmount | number:'1.2-2' }}</td>
             <td><span class="status-tag" [attr.data-status]="order.status">{{ order.status }}</span></td>
             <td>{{ order.orderDate | date:'short' }}</td>
             <td class="actions">

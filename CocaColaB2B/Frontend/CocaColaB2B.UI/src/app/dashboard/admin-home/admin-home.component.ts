@@ -32,7 +32,7 @@ import { DashboardStats } from '../../models/models';
       <div class="stat-card glass-panel">
         <div class="stat-icon">💰</div>
         <h3>Total Revenue</h3>
-        <p class="stat-value">\${{ (stats?.totalRevenue || 0) | number:'1.2-2' }}</p>
+        <p class="stat-value">₹{{ (stats?.totalRevenue || 0) | number:'1.2-2' }}</p>
       </div>
       <div class="stat-card glass-panel">
         <div class="stat-icon">👥</div>
@@ -57,7 +57,7 @@ import { DashboardStats } from '../../models/models';
           <tr *ngFor="let order of stats?.recentOrders">
             <td class="order-id">{{ order.id.substring(0, 8) }}...</td>
             <td>{{ order.wholesalerName }}</td>
-            <td class="price">\${{ order.totalAmount | number:'1.2-2' }}</td>
+            <td class="price">₹{{ order.totalAmount | number:'1.2-2' }}</td>
             <td><span class="status-tag" [attr.data-status]="order.status">{{ order.status }}</span></td>
             <td>{{ order.orderDate | date:'short' }}</td>
           </tr>

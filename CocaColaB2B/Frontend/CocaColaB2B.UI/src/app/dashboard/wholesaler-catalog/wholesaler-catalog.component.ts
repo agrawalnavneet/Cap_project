@@ -21,7 +21,12 @@ import { Product, Category } from '../../models/models';
       </div>
     </div>
 
-    <div class="product-grid">
+    <div *ngIf="isLoading" class="loading">
+      <div class="spinner"></div>
+      <p>Loading products...</p>
+    </div>
+
+    <div class="product-grid" *ngIf="!isLoading">
       <div *ngFor="let p of filteredProducts" class="product-card glass-panel">
         <div class="product-image">
           <img [src]="p.imageUrl || 'https://placehold.co/200x200/1a1a1e/ffffff?text='+p.name" [alt]="p.name" />
@@ -33,7 +38,7 @@ import { Product, Category } from '../../models/models';
           <p class="desc">{{ p.description }}</p>
           <div class="product-footer">
             <div class="price-block">
-              <span class="price">\${{ p.price | number:'1.2-2' }}</span>
+              <span class="price">₹{{ p.price | number:'1.2-2' }}</span>
               <span class="stock" [class.low]="p.quantityInStock < 100">{{ p.quantityInStock }} in stock</span>
             </div>
             <div class="qty-controls">
@@ -47,13 +52,19 @@ import { Product, Category } from '../../models/models';
       </div>
     </div>
 
-    <div *ngIf="addedMessage" class="toast">{{ addedMessage }}</div>
+    <div *ngIf="addedMessage" class="toast success">{{ addedMessage }}</div>
+    <div *ngIf="errorMessage" class="toast error">{{ errorMessage }}</div>
   `,
   styles: [`
     .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
     .search-bar { display: flex; gap: 12px; }
     .search { width: 260px; padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; }
     .filter-select { width: 180px; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; }
+
+    .loading { text-align: center; padding: 60px 40px; }
+    .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
     .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
     .product-card { border-radius: 16px; background: rgba(26,26,30,0.6); border: 1px solid rgba(255,255,255,0.05); overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; }
     .product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
@@ -74,7 +85,9 @@ import { Product, Category } from '../../models/models';
     .btn-add { padding: 8px 14px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.8rem; transition: 0.2s; }
     .btn-add:hover { opacity: 0.9; }
     .btn-add:disabled { opacity: 0.4; cursor: not-allowed; }
-    .toast { position: fixed; bottom: 30px; right: 30px; background: #10b981; color: white; padding: 14px 24px; border-radius: 10px; font-weight: 600; z-index: 1000; animation: fadeIn 0.3s ease; box-shadow: 0 8px 24px rgba(16,185,129,0.3); }
+    .toast { position: fixed; bottom: 30px; right: 30px; padding: 14px 24px; border-radius: 10px; font-weight: 600; z-index: 1000; animation: fadeIn 0.3s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .toast.success { background: #10b981; color: white; }
+    .toast.error { background: #ef4444; color: white; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   `]
 })
@@ -86,6 +99,8 @@ export class WholesalerCatalogComponent implements OnInit {
   categoryFilter = '';
   quantities: { [key: string]: number } = {};
   addedMessage = '';
+  errorMessage = '';
+  isLoading = true;
 
   constructor(private api: ApiService) {}
 
@@ -94,13 +109,22 @@ export class WholesalerCatalogComponent implements OnInit {
     forkJoin({
       products: this.api.getProducts(),
       inventory: this.api.getInventory()
-    }).subscribe(({ products, inventory }) => {
-      this.products = products.map(p => {
-        const inv = inventory.find(i => i.productSKU === p.sku);
-        return { ...p, quantityInStock: inv ? inv.quantityInStock : p.quantityInStock };
-      });
-      this.filteredProducts = this.products;
-      this.products.forEach(x => this.quantities[x.id] = 1);
+    }).subscribe({
+      next: ({ products, inventory }) => {
+        this.products = products.map(p => {
+          const inv = inventory.find(i => i.productSKU === p.sku);
+          return { ...p, quantityInStock: inv ? inv.quantityInStock : p.quantityInStock };
+        });
+        this.filteredProducts = this.products;
+        this.products.forEach(x => this.quantities[x.id] = 1);
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load products:', err);
+        this.errorMessage = 'Failed to load products. Please refresh.';
+        this.isLoading = false;
+        setTimeout(() => this.errorMessage = '', 4000);
+      }
     });
     this.api.getCategories().subscribe(c => this.categories = c);
   }
@@ -115,9 +139,22 @@ export class WholesalerCatalogComponent implements OnInit {
 
   addToCart(product: Product) {
     const qty = this.quantities[product.id] || 1;
-    this.api.addToCart({ productId: product.id, quantity: qty }).subscribe(() => {
-      this.addedMessage = `${product.name} x${qty} added to cart!`;
-      setTimeout(() => this.addedMessage = '', 3000);
+    // Send product name and price so the backend stores real data
+    this.api.addToCart({
+      productId: product.id,
+      quantity: qty,
+      productName: product.name,
+      productPrice: product.price
+    }).subscribe({
+      next: () => {
+        this.addedMessage = `${product.name} x${qty} added to cart!`;
+        setTimeout(() => this.addedMessage = '', 3000);
+      },
+      error: (err) => {
+        console.error('Failed to add to cart:', err);
+        this.errorMessage = 'Failed to add to cart. Please try again.';
+        setTimeout(() => this.errorMessage = '', 4000);
+      }
     });
   }
 }

@@ -32,6 +32,14 @@ public class CartController : ControllerBase
         return Ok();
     }
 
+    [HttpPut("{itemId}")]
+    public async Task<ActionResult> UpdateItem(Guid itemId, UpdateCartItemRequest req)
+    {
+        var success = await _mediator.Send(new UpdateCartItemCommand(itemId, req.Quantity));
+        if (!success) return NotFound();
+        return Ok();
+    }
+
     [HttpDelete("{itemId}")]
     public async Task<ActionResult> RemoveItem(Guid itemId)
     {

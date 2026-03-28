@@ -172,3 +172,6 @@
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/AuthService/AuthService.API/obj/Debug/net10.0/AuthService.API.pdb
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/AuthService/AuthService.API/obj/Debug/net10.0/AuthService.API.genruntimeconfig.cache
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/AuthService/AuthService.API/obj/Debug/net10.0/ref/AuthService.API.dll
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/AuthService/AuthService.API/bin/Debug/net10.0/BouncyCastle.Cryptography.dll
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/AuthService/AuthService.API/bin/Debug/net10.0/MailKit.dll
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/AuthService/AuthService.API/bin/Debug/net10.0/MimeKit.dll

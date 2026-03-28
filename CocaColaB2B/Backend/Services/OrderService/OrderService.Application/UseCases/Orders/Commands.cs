@@ -12,31 +12,56 @@ public record PlaceOrderCommand(Guid UserId, string UserName, string UserEmail, 
 public class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand, OrderDto>
 {
     private readonly IOrderRepository _repository;
+    private readonly ICartRepository _cartRepository;
     private readonly IPublishEndpoint _publish;
 
-    public PlaceOrderCommandHandler(IOrderRepository repository, IPublishEndpoint publish)
+    public PlaceOrderCommandHandler(IOrderRepository repository, ICartRepository cartRepository, IPublishEndpoint publish)
     {
         _repository = repository;
+        _cartRepository = cartRepository;
         _publish = publish;
     }
 
     public async Task<OrderDto> Handle(PlaceOrderCommand message, CancellationToken cancellationToken)
     {
         var req = message.Request;
-        var order = new OrderEntity { WholesalerId = message.UserId, WholesalerName = message.UserName, WholesalerEmail = message.UserEmail, ShippingAddress = req.ShippingAddress };
+
+        // Read items from the user's cart instead of request body
+        var cart = await _cartRepository.GetCartByUserIdAsync(message.UserId);
+        if (cart == null || !cart.Items.Any())
+            throw new InvalidOperationException("Cart is empty. Cannot place order.");
+
+        var order = new OrderEntity
+        {
+            WholesalerId = message.UserId,
+            WholesalerName = message.UserName,
+            WholesalerEmail = message.UserEmail,
+            ShippingAddress = req.ShippingAddress
+        };
+
         decimal total = 0;
         var eventItems = new List<OrderItemEvent>();
 
-        foreach (var item in req.Items)
+        foreach (var cartItem in cart.Items)
         {
-            var oi = new OrderItemEntity { OrderId = order.Id, ProductId = item.ProductId, ProductName = $"Product-{item.ProductId.ToString()[..8]}", Quantity = item.Quantity, UnitPrice = 0 };
+            var oi = new OrderItemEntity
+            {
+                OrderId = order.Id,
+                ProductId = cartItem.ProductId,
+                ProductName = cartItem.ProductName,
+                Quantity = cartItem.Quantity,
+                UnitPrice = cartItem.ProductPrice
+            };
             total += oi.Quantity * oi.UnitPrice;
             order.Items.Add(oi);
-            eventItems.Add(new OrderItemEvent { ProductId = item.ProductId, Quantity = item.Quantity, UnitPrice = oi.UnitPrice });
+            eventItems.Add(new OrderItemEvent { ProductId = cartItem.ProductId, Quantity = cartItem.Quantity, UnitPrice = cartItem.ProductPrice });
         }
         order.TotalAmount = total;
 
         await _repository.AddOrderAsync(order);
+
+        // Clear cart after successful order
+        await _cartRepository.ClearCartItemsAsync(cart.Id);
 
         await _publish.Publish(new OrderPlacedEvent
         {
@@ -45,7 +70,17 @@ public class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand, Order
             Items = eventItems, OrderDate = order.OrderDate
         });
 
-        return new OrderDto { Id = order.Id, TotalAmount = total, Status = "Pending", OrderDate = order.OrderDate, ShippingAddress = order.ShippingAddress };
+        return new OrderDto
+        {
+            Id = order.Id, TotalAmount = total, Status = "Pending",
+            OrderDate = order.OrderDate, ShippingAddress = order.ShippingAddress,
+            WholesalerId = message.UserId, WholesalerName = message.UserName,
+            Items = order.Items.Select(i => new OrderItemDto
+            {
+                Id = i.Id, ProductId = i.ProductId, ProductName = i.ProductName,
+                Quantity = i.Quantity, UnitPrice = i.UnitPrice, TotalPrice = i.Quantity * i.UnitPrice
+            }).ToList()
+        };
     }
 }
 

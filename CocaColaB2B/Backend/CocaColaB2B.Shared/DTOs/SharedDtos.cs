@@ -5,6 +5,10 @@ public class LoginRequestDto { public string Email { get; set; } = ""; public st
 public class LoginResponseDto { public string Token { get; set; } = ""; public string Email { get; set; } = ""; public string FullName { get; set; } = ""; public string Role { get; set; } = ""; }
 public class RegisterRequest { public string FullName { get; set; } = ""; public string Email { get; set; } = ""; public string Password { get; set; } = ""; public string? ContactNumber { get; set; } public string? Address { get; set; } }
 
+// ──── OTP DTOs ────
+public class SendOtpRequest { public string Email { get; set; } = ""; }
+public class VerifyOtpRequest { public string Email { get; set; } = ""; public string OtpCode { get; set; } = ""; }
+
 // ──── User DTOs ────
 public class UserDto { public Guid Id { get; set; } public string FullName { get; set; } = ""; public string Email { get; set; } = ""; public string Role { get; set; } = ""; public string? ContactNumber { get; set; } public string? Address { get; set; } public DateTime CreatedAt { get; set; } }
 public class CreateUserRequest { public string FullName { get; set; } = ""; public string Email { get; set; } = ""; public string Password { get; set; } = ""; public string Role { get; set; } = ""; public string? ContactNumber { get; set; } public string? Address { get; set; } }
@@ -29,7 +33,8 @@ public class UpdateOrderStatusRequest { public string Status { get; set; } = "";
 // ──── Cart DTOs ────
 public class CartDto { public Guid Id { get; set; } public List<CartItemDto> Items { get; set; } = new(); public decimal TotalAmount { get; set; } public int TotalItems { get; set; } }
 public class CartItemDto { public Guid Id { get; set; } public Guid ProductId { get; set; } public string ProductName { get; set; } = ""; public string? ProductImageUrl { get; set; } public decimal ProductPrice { get; set; } public int Quantity { get; set; } public decimal SubTotal { get; set; } }
-public class AddToCartRequest { public Guid ProductId { get; set; } public int Quantity { get; set; } = 1; }
+public class AddToCartRequest { public Guid ProductId { get; set; } public int Quantity { get; set; } = 1; public string ProductName { get; set; } = ""; public decimal ProductPrice { get; set; } }
+public class UpdateCartItemRequest { public int Quantity { get; set; } }
 
 // ──── Dashboard DTOs ────
 public class DashboardStatsDto { public int TotalOrders { get; set; } public int PendingOrders { get; set; } public int LowStockItems { get; set; } public decimal TotalRevenue { get; set; } public int TotalProducts { get; set; } public int TotalUsers { get; set; } public List<RecentOrderDto> RecentOrders { get; set; } = new(); }

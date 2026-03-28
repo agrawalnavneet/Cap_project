@@ -44,7 +44,7 @@ import { Order, User } from '../../models/models';
               <td>#{{ o.id.substr(0,8) }}</td>
               <td>{{ o.wholesalerName }}</td>
               <td>{{ o.orderDate | date:'medium' }}</td>
-              <td>\${{ o.totalAmount | number:'1.2-2' }}</td>
+              <td>₹{{ o.totalAmount | number:'1.2-2' }}</td>
               <td>
                 <select [(ngModel)]="selectedDrivers[o.id]" class="form-input driver-select">
                   <option [ngValue]="null">Select Driver (Optional)</option>

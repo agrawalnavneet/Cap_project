@@ -39,6 +39,7 @@ export class ApiService {
   // Cart
   getCart(): Observable<Cart> { return this.http.get<Cart>(`${this.api}/cart`); }
   addToCart(data: any): Observable<void> { return this.http.post<void>(`${this.api}/cart`, data); }
+  updateCartItem(itemId: string, data: any): Observable<void> { return this.http.put<void>(`${this.api}/cart/${itemId}`, data); }
   removeFromCart(itemId: string): Observable<void> { return this.http.delete<void>(`${this.api}/cart/${itemId}`); }
   clearCart(): Observable<void> { return this.http.delete<void>(`${this.api}/cart`); }
 

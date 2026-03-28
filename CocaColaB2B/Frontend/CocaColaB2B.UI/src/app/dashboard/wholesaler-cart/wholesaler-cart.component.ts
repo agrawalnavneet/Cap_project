@@ -16,14 +16,19 @@ import { Cart } from '../../models/models';
       <span class="item-count" *ngIf="cart">{{ cart.totalItems }} Items</span>
     </div>
 
-    <div *ngIf="!cart || cart.items.length === 0" class="empty-cart glass-panel">
+    <div *ngIf="isLoading" class="loading glass-panel">
+      <div class="spinner"></div>
+      <p>Loading cart...</p>
+    </div>
+
+    <div *ngIf="!isLoading && (!cart || cart.items.length === 0)" class="empty-cart glass-panel">
       <div class="empty-icon">🛒</div>
       <h3>Your cart is empty</h3>
       <p>Browse the catalog to add products</p>
       <button class="btn-primary" (click)="goToCatalog()">Browse Catalog</button>
     </div>
 
-    <div *ngIf="cart && cart.items.length > 0" class="cart-layout">
+    <div *ngIf="!isLoading && cart && cart.items.length > 0" class="cart-layout">
       <div class="cart-items">
         <div *ngFor="let item of cart.items" class="cart-item glass-panel">
           <div class="item-image">
@@ -31,7 +36,7 @@ import { Cart } from '../../models/models';
           </div>
           <div class="item-details">
             <h3>{{ item.productName }}</h3>
-            <p class="unit-price">\${{ item.productPrice | number:'1.2-2' }} each</p>
+            <p class="unit-price">₹{{ item.productPrice | number:'1.2-2' }} each</p>
           </div>
           <div class="item-qty">
             <button class="qty-btn" (click)="updateQuantity(item, -1)" [disabled]="item.quantity <= 1">−</button>
@@ -39,7 +44,7 @@ import { Cart } from '../../models/models';
             <button class="qty-btn" (click)="updateQuantity(item, 1)">+</button>
           </div>
           <div class="item-subtotal">
-            <p class="subtotal">\${{ item.subTotal | number:'1.2-2' }}</p>
+            <p class="subtotal">₹{{ item.subTotal | number:'1.2-2' }}</p>
           </div>
           <button class="btn-remove" (click)="removeItem(item.id)">✕</button>
         </div>
@@ -49,7 +54,7 @@ import { Cart } from '../../models/models';
         <h3>Order Summary</h3>
         <div class="summary-row">
           <span>Subtotal ({{ cart.totalItems }} items)</span>
-          <span>\${{ cart.totalAmount | number:'1.2-2' }}</span>
+          <span>₹{{ cart.totalAmount | number:'1.2-2' }}</span>
         </div>
         <div class="summary-row">
           <span>Shipping</span>
@@ -58,7 +63,7 @@ import { Cart } from '../../models/models';
         <div class="summary-divider"></div>
         <div class="summary-row total">
           <span>Total</span>
-          <span>\${{ cart.totalAmount | number:'1.2-2' }}</span>
+          <span>₹{{ cart.totalAmount | number:'1.2-2' }}</span>
         </div>
 
         <div class="shipping-address">
@@ -81,6 +86,10 @@ import { Cart } from '../../models/models';
   styles: [`
     .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
     .item-count { background: rgba(255,255,255,0.08); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; color: rgba(255,255,255,0.6); }
+
+    .loading { text-align: center; padding: 60px 40px; border-radius: 16px; background: rgba(26,26,30,0.6); border: 1px solid rgba(255,255,255,0.05); }
+    .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     .empty-cart { text-align: center; padding: 80px 40px; border-radius: 16px; background: rgba(26,26,30,0.6); border: 1px solid rgba(255,255,255,0.05); }
     .empty-icon { font-size: 4rem; margin-bottom: 16px; opacity: 0.5; }
@@ -137,6 +146,7 @@ export class WholesalerCartComponent implements OnInit {
   cart: Cart | null = null;
   shippingAddress = '';
   isProcessing = false;
+  isLoading = true;
   successMessage = '';
   errorMessage = '';
 
@@ -151,25 +161,51 @@ export class WholesalerCartComponent implements OnInit {
   }
 
   loadCart() {
+    this.isLoading = true;
     this.api.getCart().subscribe({
-      next: (c) => this.cart = c,
-      error: () => this.cart = { id: '', items: [], totalAmount: 0, totalItems: 0 }
+      next: (c) => {
+        this.cart = c;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.cart = { id: '', items: [], totalAmount: 0, totalItems: 0 };
+        this.isLoading = false;
+      }
     });
   }
 
   updateQuantity(item: any, delta: number) {
     const newQty = item.quantity + delta;
     if (newQty < 1) return;
-    this.api.addToCart({ productId: item.productId, quantity: newQty }).subscribe(() => this.loadCart());
+    // Use the dedicated update endpoint (PUT) to set exact quantity
+    this.api.updateCartItem(item.id, { quantity: newQty }).subscribe({
+      next: () => this.loadCart(),
+      error: () => {
+        this.errorMessage = 'Failed to update quantity.';
+        setTimeout(() => this.errorMessage = '', 3000);
+      }
+    });
   }
 
   removeItem(itemId: string) {
-    this.api.removeFromCart(itemId).subscribe(() => this.loadCart());
+    this.api.removeFromCart(itemId).subscribe({
+      next: () => this.loadCart(),
+      error: () => {
+        this.errorMessage = 'Failed to remove item.';
+        setTimeout(() => this.errorMessage = '', 3000);
+      }
+    });
   }
 
   clearCart() {
     if (confirm('Clear all items from cart?')) {
-      this.api.clearCart().subscribe(() => this.loadCart());
+      this.api.clearCart().subscribe({
+        next: () => this.loadCart(),
+        error: () => {
+          this.errorMessage = 'Failed to clear cart.';
+          setTimeout(() => this.errorMessage = '', 3000);
+        }
+      });
     }
   }
 
@@ -193,10 +229,9 @@ export class WholesalerCartComponent implements OnInit {
       prefillEmail: user.email || '',
       prefillContact: ''
     }).then((paymentId: string) => {
-      // Payment successful — place order
+      // Payment successful — place order (backend reads items from cart)
       this.api.placeOrder({
-        shippingAddress: this.shippingAddress,
-        paymentId: paymentId
+        shippingAddress: this.shippingAddress
       }).subscribe({
         next: () => {
           this.successMessage = '✅ Order placed successfully!';
@@ -206,14 +241,16 @@ export class WholesalerCartComponent implements OnInit {
             this.router.navigate(['/dashboard/my-orders']);
           }, 2000);
         },
-        error: () => {
+        error: (err) => {
+          console.error('Order placement failed:', err);
           this.errorMessage = 'Order placement failed. Please try again.';
           setTimeout(() => this.errorMessage = '', 4000);
         },
         complete: () => this.isProcessing = false
       });
-    }).catch(() => {
+    }).catch((err) => {
       this.isProcessing = false;
+      console.error('Payment error:', err);
       this.errorMessage = 'Payment cancelled or failed.';
       setTimeout(() => this.errorMessage = '', 4000);
     });

@@ -44,7 +44,7 @@ import { Delivery } from '../../models/models';
           <div class="d-body">
             <h3>{{ d.wholesalerName }}</h3>
             <p class="address">📍 {{ d.shippingAddress || 'No address provided' }}</p>
-            <p class="amount">💰 \${{ d.orderTotal | number:'1.2-2' }}</p>
+            <p class="amount">💰 ₹{{ d.orderTotal | number:'1.2-2' }}</p>
             <p class="time">🕒 Assigned: {{ d.assignedAt | date:'shortTime' }}</p>
             
             <div *ngIf="d.status !== 'Delivered'" class="notes-section">

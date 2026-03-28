@@ -42,6 +42,12 @@ public class CartRepository : ICartRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task UpdateCartItemAsync(CartItemEntity item)
+    {
+        _context.CartItems.Update(item);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task ClearCartItemsAsync(Guid cartId)
     {
         var items = await _context.CartItems.Where(i => i.CartId == cartId).ToListAsync();
