@@ -4,7 +4,7 @@ using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
 using ProductService.Domain.Entities;
 using ProductService.Infrastructure.Data;
 using Serilog;
@@ -35,7 +35,13 @@ try
         });
         c.AddSecurityRequirement(new OpenApiSecurityRequirement
         {
-            [new OpenApiSecuritySchemeReference("Bearer")] = new List<string>()
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                },
+                Array.Empty<string>()
+            }
         });
     });
 

@@ -4,7 +4,7 @@ using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
 using OrderService.Application.Interfaces;
 using OrderService.Application.UseCases.Orders;
 using OrderService.Infrastructure.Consumers;
@@ -37,10 +37,16 @@ try
             Scheme = "bearer",
             BearerFormat = "JWT"
         });
-        // c.AddSecurityRequirement(new OpenApiSecurityRequirement
-        // {
-        //     [new OpenApiSecuritySchemeReference("Bearer")] = new List<string>()
-        // });
+        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                },
+                Array.Empty<string>()
+            }
+        });
     });
     builder.Services.AddSignalR();
 

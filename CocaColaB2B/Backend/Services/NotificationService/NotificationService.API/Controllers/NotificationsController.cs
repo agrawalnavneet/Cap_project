@@ -59,8 +59,9 @@ public class NotificationsController : ControllerBase
         var userId = TryGetUserId();
         if (userId is null) return Unauthorized();
 
+        var isPrivileged = UserRole == "Admin" || UserRole == "WarehouseManager";
         await _db.Notifications
-            .Where(n => (n.UserId == userId || (UserRole is "Admin" or "WarehouseManager" && n.UserId == Guid.Empty)) && !n.IsRead)
+            .Where(n => (n.UserId == userId || (isPrivileged && n.UserId == Guid.Empty)) && !n.IsRead)
             .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
         return Ok();
     }
