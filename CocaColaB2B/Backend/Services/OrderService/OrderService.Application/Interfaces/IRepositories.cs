@@ -21,4 +21,5 @@ public interface ICartRepository
     Task RemoveCartItemAsync(CartItemEntity item);
     Task UpdateCartItemAsync(CartItemEntity item);
     Task ClearCartItemsAsync(Guid cartId);
+    void ClearTracking();
 }

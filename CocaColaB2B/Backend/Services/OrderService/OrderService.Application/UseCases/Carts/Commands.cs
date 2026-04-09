@@ -51,6 +51,9 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, bool>
 
                 // Small delay before retry to let the conflicting transaction complete
                 await Task.Delay(100, cancellationToken);
+                
+                // Clear the Entity Framework change tracker so the next loop fetches the newest Database version
+                _repository.ClearTracking();
             }
         }
         return false; // Should never reach here

@@ -37,10 +37,10 @@ try
             Scheme = "bearer",
             BearerFormat = "JWT"
         });
-        c.AddSecurityRequirement(new OpenApiSecurityRequirement
-        {
-            [new OpenApiSecuritySchemeReference("Bearer")] = new List<string>()
-        });
+        // c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        // {
+        //     [new OpenApiSecuritySchemeReference("Bearer")] = new List<string>()
+        // });
     });
     builder.Services.AddSignalR();
 

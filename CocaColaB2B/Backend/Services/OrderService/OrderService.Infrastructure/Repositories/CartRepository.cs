@@ -97,4 +97,9 @@ public class CartRepository : ICartRepository
         _context.CartItems.RemoveRange(items);
         await _context.SaveChangesAsync();
     }
+
+    public void ClearTracking()
+    {
+        _context.ChangeTracker.Clear();
+    }
 }
