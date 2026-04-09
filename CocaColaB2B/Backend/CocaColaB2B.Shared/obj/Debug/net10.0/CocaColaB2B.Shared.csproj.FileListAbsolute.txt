@@ -10,3 +10,4 @@
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/obj/Debug/net10.0/refint/CocaColaB2B.Shared.dll
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/obj/Debug/net10.0/CocaColaB2B.Shared.pdb
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/obj/Debug/net10.0/ref/CocaColaB2B.Shared.dll
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/obj/Debug/net10.0/CocaColaB2B.Shared.csproj.AssemblyReference.cache

@@ -15,13 +15,32 @@ public class NotificationsController : ControllerBase
     private readonly NotificationDbContext _db;
     public NotificationsController(NotificationDbContext db) => _db = db;
 
-    private Guid UserId => Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    private Guid? TryGetUserId()
+    {
+        var value = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(value, out var id) ? id : null;
+    }
+
+    private string UserRole => User.FindFirst(ClaimTypes.Role)?.Value ?? "";
 
     [HttpGet]
     public async Task<ActionResult<List<NotificationDto>>> Get()
     {
-        var notifs = await _db.Notifications.Where(n => n.UserId == UserId).OrderByDescending(n => n.CreatedAt).Take(50).ToListAsync();
-        return Ok(notifs.Select(n => new NotificationDto { Id = n.Id, Message = n.Message, Type = n.Type, IsRead = n.IsRead, CreatedAt = n.CreatedAt }));
+        var userId = TryGetUserId();
+        if (userId is null) return Unauthorized();
+
+        // Admins and WarehouseManagers also see system-wide notifications (UserId = Guid.Empty)
+        IQueryable<NotificationService.Domain.Entities.NotificationEntity> query;
+        if (UserRole is "Admin" or "WarehouseManager")
+            query = _db.Notifications.Where(n => n.UserId == userId || n.UserId == Guid.Empty);
+        else
+            query = _db.Notifications.Where(n => n.UserId == userId);
+
+        var notifs = await query.OrderByDescending(n => n.CreatedAt).Take(50).ToListAsync();
+        return Ok(notifs.Select(n => new NotificationDto
+        {
+            Id = n.Id, Message = n.Message, Type = n.Type, IsRead = n.IsRead, CreatedAt = n.CreatedAt
+        }));
     }
 
     [HttpPut("{id}/read")]
@@ -37,7 +56,12 @@ public class NotificationsController : ControllerBase
     [HttpPut("read-all")]
     public async Task<ActionResult> MarkAllRead()
     {
-        await _db.Notifications.Where(n => n.UserId == UserId && !n.IsRead).ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
+        var userId = TryGetUserId();
+        if (userId is null) return Unauthorized();
+
+        await _db.Notifications
+            .Where(n => (n.UserId == userId || (UserRole is "Admin" or "WarehouseManager" && n.UserId == Guid.Empty)) && !n.IsRead)
+            .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
         return Ok();
     }
 }

@@ -2,6 +2,7 @@ using CocaColaB2B.Shared.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OrderService.Application.UseCases.Carts;
 using System.Security.Claims;
 
@@ -13,31 +14,73 @@ namespace OrderService.API.Controllers;
 public class CartController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly ILogger<CartController> _logger;
 
-    public CartController(IMediator mediator) => _mediator = mediator;
+    public CartController(IMediator mediator, ILogger<CartController> logger)
+    {
+        _mediator = mediator;
+        _logger = logger;
+    }
 
-    private Guid UserId => Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    private Guid? TryGetUserId()
+    {
+        var value = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(value, out var id) ? id : null;
+    }
 
     [HttpGet]
     public async Task<ActionResult<CartDto>> GetCart()
     {
-        var cart = await _mediator.Send(new GetCartQuery(UserId));
+        var userId = TryGetUserId();
+        if (userId is null) return Unauthorized(new { error = "Invalid or missing user token." });
+
+        var cart = await _mediator.Send(new GetCartQuery(userId.Value));
         return Ok(cart);
     }
 
     [HttpPost]
-    public async Task<ActionResult> AddToCart(AddToCartRequest req)
+    public async Task<ActionResult> AddToCart([FromBody] AddToCartRequest req)
     {
-        await _mediator.Send(new AddToCartCommand(UserId, req));
-        return Ok();
+        if (!ModelState.IsValid)
+            return BadRequest(new { error = "Invalid cart payload." });
+        var userId = TryGetUserId();
+        if (userId is null) return Unauthorized(new { error = "Invalid or missing user token." });
+
+        try
+        {
+            await _mediator.Send(new AddToCartCommand(userId.Value, req));
+            return Ok();
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Cart concurrency conflict for user {UserId}", userId);
+            return Conflict(new { error = "Your cart changed in another request. Please try again." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Invalid add-to-cart request for user {UserId}", userId);
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected cart error for user {UserId}", userId);
+            return StatusCode(500, new { error = "Failed to add item to cart." });
+        }
     }
 
     [HttpPut("{itemId}")]
     public async Task<ActionResult> UpdateItem(Guid itemId, UpdateCartItemRequest req)
     {
-        var success = await _mediator.Send(new UpdateCartItemCommand(itemId, req.Quantity));
-        if (!success) return NotFound();
-        return Ok();
+        try
+        {
+            var success = await _mediator.Send(new UpdateCartItemCommand(itemId, req.Quantity));
+            if (!success) return NotFound();
+            return Ok();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     [HttpDelete("{itemId}")]
@@ -51,7 +94,9 @@ public class CartController : ControllerBase
     [HttpDelete]
     public async Task<ActionResult> ClearCart()
     {
-        await _mediator.Send(new ClearCartCommand(UserId));
+        var userId = TryGetUserId();
+        if (userId is null) return Unauthorized(new { error = "Invalid or missing user token." });
+        await _mediator.Send(new ClearCartCommand(userId.Value));
         return NoContent();
     }
 }

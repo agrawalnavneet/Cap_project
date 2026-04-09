@@ -26,6 +26,7 @@ public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, List<OrderD
             Id = o.Id, WholesalerId = o.WholesalerId, WholesalerName = o.WholesalerName,
             DriverId = o.DriverId, OrderDate = o.OrderDate, TotalAmount = o.TotalAmount,
             Status = o.Status, ShippingAddress = o.ShippingAddress,
+            PaymentId = o.PaymentId, PaymentStatus = o.PaymentStatus,
             Items = o.Items.Select(i => new OrderItemDto { Id = i.Id, ProductId = i.ProductId, ProductName = i.ProductName, Quantity = i.Quantity, UnitPrice = i.UnitPrice, TotalPrice = i.Quantity * i.UnitPrice }).ToList()
         }).ToList();
     }
@@ -50,6 +51,9 @@ public class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboardStatsQu
             TotalOrders = orders.Count,
             PendingOrders = orders.Count(o => o.Status == "Pending"),
             TotalRevenue = orders.Where(o => o.Status == "Delivered").Sum(o => o.TotalAmount),
+            // TotalProducts and TotalUsers are populated by the frontend from their respective services
+            TotalProducts = 0,
+            TotalUsers = 0,
             RecentOrders = orders.OrderByDescending(o => o.OrderDate).Take(10).Select(o => new RecentOrderDto { Id = o.Id, WholesalerName = o.WholesalerName, TotalAmount = o.TotalAmount, Status = o.Status, OrderDate = o.OrderDate }).ToList()
         };
     }

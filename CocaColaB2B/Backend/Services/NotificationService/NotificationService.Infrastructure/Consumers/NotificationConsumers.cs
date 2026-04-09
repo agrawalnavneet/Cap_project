@@ -18,7 +18,8 @@ public class OrderPlacedNotificationConsumer : IConsumer<OrderPlacedEvent>
     public async Task Consume(ConsumeContext<OrderPlacedEvent> context)
     {
         var ev = context.Message;
-        _db.Notifications.Add(new NotificationEntity { UserId = ev.WholesalerId, Message = $"Your order #{ev.OrderId.ToString()[..8]} has been placed! Total: ${ev.TotalAmount:N2}", Type = "OrderPlaced" });
+        // BUG-3 FIX: Use ₹ instead of $
+        _db.Notifications.Add(new NotificationEntity { UserId = ev.WholesalerId, Message = $"Your order #{ev.OrderId.ToString()[..8]} has been placed! Total: ₹{ev.TotalAmount:N2}", Type = "OrderPlaced" });
         await _db.SaveChangesAsync();
 
         try
@@ -26,7 +27,7 @@ public class OrderPlacedNotificationConsumer : IConsumer<OrderPlacedEvent>
             var host = _config["Email:SmtpHost"];
             if (string.IsNullOrEmpty(host)) return;
             using var client = new SmtpClient(host, int.Parse(_config["Email:SmtpPort"] ?? "587")) { Credentials = new NetworkCredential(_config["Email:Username"], _config["Email:Password"]), EnableSsl = true };
-            var mail = new MailMessage(_config["Email:FromEmail"] ?? "noreply@cocacola-b2b.com", ev.WholesalerEmail, "Order Confirmation", $"<h2>Order Placed Successfully!</h2><p>Order #{ev.OrderId.ToString()[..8]}</p><p>Total: ${ev.TotalAmount:N2}</p>") { IsBodyHtml = true };
+            var mail = new MailMessage(_config["Email:FromEmail"] ?? "noreply@cocacola-b2b.com", ev.WholesalerEmail, "Order Confirmation", $"<h2>Order Placed Successfully!</h2><p>Order #{ev.OrderId.ToString()[..8]}</p><p>Total: ₹{ev.TotalAmount:N2}</p>") { IsBodyHtml = true };
             await client.SendMailAsync(mail);
         }
         catch { }
@@ -59,6 +60,19 @@ public class LowStockNotificationConsumer : IConsumer<LowStockAlertEvent>
     {
         var ev = context.Message;
         _db.Notifications.Add(new NotificationEntity { UserId = Guid.Empty, Message = $"⚠️ Low stock alert: {ev.ProductName} — only {ev.CurrentStock} left (reorder at {ev.ReorderLevel})", Type = "LowStock" });
+        await _db.SaveChangesAsync();
+    }
+}
+
+public class PaymentNotificationConsumer : IConsumer<PaymentVerifiedEvent>
+{
+    private readonly NotificationDbContext _db;
+    public PaymentNotificationConsumer(NotificationDbContext db) => _db = db;
+
+    public async Task Consume(ConsumeContext<PaymentVerifiedEvent> context)
+    {
+        var ev = context.Message;
+        _db.Notifications.Add(new NotificationEntity { UserId = Guid.Empty, Message = $"💳 Payment received for Order #{ev.OrderId.ToString()[..8]} — ₹{ev.Amount:N2}", Type = "PaymentReceived" });
         await _db.SaveChangesAsync();
     }
 }

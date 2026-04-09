@@ -2,7 +2,7 @@ namespace InventoryService.Domain.Entities;
 
 public class InventoryEntity
 {
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     public Guid ProductId { get; set; }
     public string ProductName { get; set; } = "";
     public string ProductSKU { get; set; } = "";

@@ -1,8 +1,22 @@
 {
   "version": 2,
-  "dgSpecHash": "9Y4VP0yDjLU=",
+  "dgSpecHash": "4TXSI4W9p5M=",
   "success": true,
   "projectFilePath": "/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/CocaColaB2B.Shared/CocaColaB2B.Shared.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "/Users/navneetagarwal/.nuget/packages/microsoft.extensions.dependencymodel/9.0.0/microsoft.extensions.dependencymodel.9.0.0.nupkg.sha512",
+    "/Users/navneetagarwal/.nuget/packages/serilog/4.2.0/serilog.4.2.0.nupkg.sha512",
+    "/Users/navneetagarwal/.nuget/packages/serilog.aspnetcore/9.0.0/serilog.aspnetcore.9.0.0.nupkg.sha512",
+    "/Users/navneetagarwal/.nuget/packages/serilog.enrichers.environment/3.0.0/serilog.enrichers.environment.3.0.0.nupkg.sha512",
+    "/Users/navneetagarwal/.nuget/packages/serilog.enrichers.thread/4.0.0/serilog.enrichers.thread.4.0.0.nupkg.sha512",
+    "/Users/navneetagarwal/.nuget/packages/serilog.extensions.hosting/9.0.0/serilog.extensions.hosting.9.0.0.nupkg.sha512",
+    "/Users/navneetagarwal/.nuget/packages/serilog.extensions.logging/9.0.0/serilog.extensions.logging.9.0.0.nupkg.sha512",
+    "/Users/navneetagarwal/.nuget/packages/serilog.formatting.compact/3.0.0/serilog.formatting.compact.3.0.0.nupkg.sha512",
+    "/Users/navneetagarwal/.nuget/packages/serilog.settings.configuration/9.0.0/serilog.settings.configuration.9.0.0.nupkg.sha512",
+    "/Users/navneetagarwal/.nuget/packages/serilog.sinks.console/6.0.0/serilog.sinks.console.6.0.0.nupkg.sha512",
+    "/Users/navneetagarwal/.nuget/packages/serilog.sinks.debug/3.0.0/serilog.sinks.debug.3.0.0.nupkg.sha512",
+    "/Users/navneetagarwal/.nuget/packages/serilog.sinks.file/6.0.0/serilog.sinks.file.6.0.0.nupkg.sha512",
+    "/Users/navneetagarwal/.nuget/packages/serilog.sinks.seq/9.0.0/serilog.sinks.seq.9.0.0.nupkg.sha512"
+  ],
   "logs": []
 }

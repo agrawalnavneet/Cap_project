@@ -18,5 +18,6 @@ public class OrderDbContext : DbContext
         m.Entity<CartItemEntity>().HasOne(ci => ci.Cart).WithMany(c => c.Items).HasForeignKey(ci => ci.CartId);
         m.Entity<OrderEntity>().Property(o => o.TotalAmount).HasPrecision(18, 2);
         m.Entity<OrderItemEntity>().Property(oi => oi.UnitPrice).HasPrecision(18, 2);
+        m.Entity<CartItemEntity>().Property(ci => ci.ProductPrice).HasPrecision(18, 2);
     }
 }

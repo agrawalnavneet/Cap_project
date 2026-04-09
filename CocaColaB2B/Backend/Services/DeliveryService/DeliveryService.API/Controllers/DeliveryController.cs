@@ -19,21 +19,29 @@ public class DeliveryController : ControllerBase
 
     public DeliveryController(DeliveryDbContext db, IPublishEndpoint publish) { _db = db; _publish = publish; }
 
-    private Guid UserId => Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    private Guid? TryGetUserId()
+    {
+        var value = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(value, out var id) ? id : null;
+    }
 
     [HttpGet]
     public async Task<ActionResult<List<DeliveryDto>>> GetDeliveries()
     {
-        var deliveries = await _db.DeliveryAssignments.Where(d => d.DriverId == UserId).OrderByDescending(d => d.AssignedAt).ToListAsync();
+        var userId = TryGetUserId();
+        if (userId is null) return Unauthorized();
+        var deliveries = await _db.DeliveryAssignments.Where(d => d.DriverId == userId).OrderByDescending(d => d.AssignedAt).ToListAsync();
         return Ok(deliveries.Select(d => new DeliveryDto { Id = d.Id, OrderId = d.OrderId, WholesalerName = d.WholesalerName, ShippingAddress = d.ShippingAddress, OrderTotal = d.OrderTotal, Status = d.Status, AssignedAt = d.AssignedAt, DeliveredAt = d.DeliveredAt, Notes = d.Notes }));
     }
 
     [HttpPut("{id}/status")]
     public async Task<ActionResult> UpdateStatus(Guid id, UpdateDeliveryStatusRequest req)
     {
+        var userId = TryGetUserId();
+        if (userId is null) return Unauthorized();
         var delivery = await _db.DeliveryAssignments.FindAsync(id);
         if (delivery == null) return NotFound();
-        if (delivery.DriverId != UserId) return Forbid();
+        if (delivery.DriverId != userId) return Forbid();
 
         delivery.Status = req.Status;
         delivery.Notes = req.Notes;

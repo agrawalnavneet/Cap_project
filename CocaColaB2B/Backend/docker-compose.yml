@@ -1,182 +1,213 @@
-version: '3.8'
+# ─────────────────────────────────────────────────────────────────────────────
+# CocaCola B2B — Full Stack Docker Compose
+# Build context for every service is the Backend/ folder so Dockerfiles can
+# COPY the shared CocaColaB2B.Shared project alongside each service.
+# ─────────────────────────────────────────────────────────────────────────────
 
 services:
-  # ── Infrastructure ──
+
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    platform: linux/amd64
+    container_name: sqlserver
     environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=Agarwal@15
+      SA_PASSWORD: "Agarwal@15"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
     ports:
       - "1433:1433"
     volumes:
-      - sql-data:/var/opt/mssql
+      - sqlserver_data:/var/opt/mssql
     healthcheck:
-      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Agarwal@15" -Q "SELECT 1" -C -b || exit 1
+      # mssql-tools18 requires -C (trust cert) and removed the old -No flag
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Agarwal@15' -Q 'SELECT 1' -C -b || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 45s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s
+      start_period: 20s
 
   redis:
-    image: redis:alpine
+    image: redis:7-alpine
+    container_name: redis
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
 
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
+  # ── Microservices ────────────────────────────────────────────────────────────
 
-  # ── Microservices ──
   auth-service:
     build:
       context: .
       dockerfile: Services/AuthService/Dockerfile
-    ports:
-      - "5301:5301"
+    container_name: auth-service
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Auth;User Id=sa;Password=Agarwal@15;TrustServerCertificate=True
+      ASPNETCORE_ENVIRONMENT: Production
     depends_on:
       sqlserver:
         condition: service_healthy
-    restart: on-failure
+    ports:
+      - "5301:5301"
+    restart: unless-stopped
 
   product-service:
     build:
       context: .
       dockerfile: Services/ProductService/Dockerfile
-    ports:
-      - "5302:5302"
+    container_name: product-service
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Products;User Id=sa;Password=Agarwal@15;TrustServerCertificate=True
-      - ConnectionStrings__RedisCache=redis:6379
+      ASPNETCORE_ENVIRONMENT: Production
     depends_on:
       sqlserver:
         condition: service_healthy
       redis:
         condition: service_healthy
-    restart: on-failure
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "5302:5302"
+    restart: unless-stopped
 
   order-service:
     build:
       context: .
       dockerfile: Services/OrderService/Dockerfile
-    ports:
-      - "5303:5303"
+    container_name: order-service
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Orders;User Id=sa;Password=Agarwal@15;TrustServerCertificate=True
-      - RabbitMQ__Host=rabbitmq
+      ASPNETCORE_ENVIRONMENT: Production
     depends_on:
       sqlserver:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    restart: on-failure
+    ports:
+      - "5303:5303"
+    restart: unless-stopped
 
   inventory-service:
     build:
       context: .
       dockerfile: Services/InventoryService/Dockerfile
-    ports:
-      - "5304:5304"
+    container_name: inventory-service
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Inventory;User Id=sa;Password=Agarwal@15;TrustServerCertificate=True
-      - RabbitMQ__Host=rabbitmq
+      ASPNETCORE_ENVIRONMENT: Production
     depends_on:
       sqlserver:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    restart: on-failure
+    ports:
+      - "5304:5304"
+    restart: unless-stopped
 
   notification-service:
     build:
       context: .
       dockerfile: Services/NotificationService/Dockerfile
-    ports:
-      - "5305:5305"
+    container_name: notification-service
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Notifications;User Id=sa;Password=Agarwal@15;TrustServerCertificate=True
-      - RabbitMQ__Host=rabbitmq
+      ASPNETCORE_ENVIRONMENT: Production
     depends_on:
       sqlserver:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    restart: on-failure
+    ports:
+      - "5305:5305"
+    restart: unless-stopped
 
   delivery-service:
     build:
       context: .
       dockerfile: Services/DeliveryService/Dockerfile
-    ports:
-      - "5306:5306"
+    container_name: delivery-service
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=CocaColaB2B_Delivery;User Id=sa;Password=Agarwal@15;TrustServerCertificate=True
-      - RabbitMQ__Host=rabbitmq
+      ASPNETCORE_ENVIRONMENT: Production
     depends_on:
       sqlserver:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    restart: on-failure
+    ports:
+      - "5306:5306"
+    restart: unless-stopped
 
-  # ── API Gateway ──
+  payment-service:
+    build:
+      context: .
+      dockerfile: Services/PaymentService/Dockerfile
+    container_name: payment-service
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      # Override with real Razorpay keys for production
+      Razorpay__KeyId: ${RAZORPAY_KEY_ID:-rzp_test_placeholder}
+      Razorpay__KeySecret: ${RAZORPAY_KEY_SECRET:-test_secret_placeholder}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "5307:5307"
+    restart: unless-stopped
+
   gateway:
     build:
       context: .
       dockerfile: Gateway/Dockerfile
+    container_name: gateway
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+    depends_on:
+      - auth-service
+      - product-service
+      - order-service
+      - inventory-service
+      - notification-service
+      - delivery-service
+      - payment-service
     ports:
       - "5010:5000"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-    depends_on:
-      auth-service:
-        condition: service_started
-      product-service:
-        condition: service_started
-      order-service:
-        condition: service_started
-      inventory-service:
-        condition: service_started
-      notification-service:
-        condition: service_started
-      delivery-service:
-        condition: service_started
-    restart: on-failure
+    restart: unless-stopped
 
-  # ── DevOps ──
-  sonarqube:
-    image: sonarqube:community
+  # ── Frontend ─────────────────────────────────────────────────────────────────
+
+  frontend:
+    build:
+      context: ../Frontend/CocaColaB2B.UI
+      dockerfile: Dockerfile
+    container_name: frontend
     ports:
-      - "9000:9000"
-    environment:
-      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
-    volumes:
-      - sonar-data:/opt/sonarqube/data
-      - sonar-extensions:/opt/sonarqube/extensions
+      - "4200:80"
+    depends_on:
+      - gateway
+    restart: unless-stopped
 
 volumes:
-  sql-data:
-  sonar-data:
-  sonar-extensions:
+  sqlserver_data:
+  rabbitmq_data:
+  redis_data:

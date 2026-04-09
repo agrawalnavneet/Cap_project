@@ -1,4 +1,6 @@
 using CocaColaB2B.Shared.DTOs;
+using CocaColaB2B.Shared.Events;
+using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,8 +17,14 @@ public class ProductsController : ControllerBase
 {
     private readonly ProductDbContext _db;
     private readonly IDistributedCache _cache;
+    private readonly IPublishEndpoint _publish;
 
-    public ProductsController(ProductDbContext db, IDistributedCache cache) { _db = db; _cache = cache; }
+    public ProductsController(ProductDbContext db, IDistributedCache cache, IPublishEndpoint publish)
+    {
+        _db = db;
+        _cache = cache;
+        _publish = publish;
+    }
 
     [HttpGet]
     public async Task<ActionResult<List<ProductDto>>> GetProducts()
@@ -34,7 +42,8 @@ public class ProductsController : ControllerBase
             DiscountPercentage = discounts.FirstOrDefault(d => d.ProductId == p.Id && d.IsActive)?.Percentage
         }).ToList();
 
-        await _cache.SetStringAsync("products:all", JsonSerializer.Serialize(result), new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
+        await _cache.SetStringAsync("products:all", JsonSerializer.Serialize(result),
+            new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
         return Ok(result);
     }
 
@@ -43,17 +52,43 @@ public class ProductsController : ControllerBase
     {
         var p = await _db.Products.Include(x => x.Category).FirstOrDefaultAsync(x => x.Id == id);
         if (p == null) return NotFound();
-        return Ok(new ProductDto { Id = p.Id, Name = p.Name, Description = p.Description, ImageUrl = p.ImageUrl, SKU = p.SKU, Price = p.Price, CategoryId = p.CategoryId, CategoryName = p.Category?.Name });
+        return Ok(new ProductDto
+        {
+            Id = p.Id, Name = p.Name, Description = p.Description, ImageUrl = p.ImageUrl,
+            SKU = p.SKU, Price = p.Price, CategoryId = p.CategoryId, CategoryName = p.Category?.Name
+        });
     }
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ProductDto>> CreateProduct(CreateProductRequest req)
     {
-        var product = new ProductEntity { Name = req.Name, Description = req.Description, ImageUrl = req.ImageUrl, SKU = req.SKU, Price = req.Price, CategoryId = req.CategoryId };
+        var product = new ProductEntity
+        {
+            Name = req.Name, Description = req.Description, ImageUrl = req.ImageUrl,
+            SKU = req.SKU, Price = req.Price, CategoryId = req.CategoryId
+        };
         _db.Products.Add(product);
         await _db.SaveChangesAsync();
         await _cache.RemoveAsync("products:all");
+
+        // Publish event so InventoryService creates/links an inventory record
+        try
+        {
+            await _publish.Publish(new ProductCreatedEvent
+            {
+                ProductId = product.Id,
+                ProductName = product.Name,
+                ProductSKU = product.SKU,
+                InitialStock = req.InitialStock,
+                ReorderLevel = 100
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ProductService] Failed to publish ProductCreatedEvent: {ex.Message}");
+        }
+
         return Ok(new ProductDto { Id = product.Id, Name = product.Name, SKU = product.SKU, Price = product.Price, CategoryId = product.CategoryId });
     }
 
@@ -63,7 +98,8 @@ public class ProductsController : ControllerBase
     {
         var p = await _db.Products.FindAsync(id);
         if (p == null) return NotFound();
-        p.Name = req.Name; p.Description = req.Description; p.ImageUrl = req.ImageUrl; p.SKU = req.SKU; p.Price = req.Price; p.CategoryId = req.CategoryId;
+        p.Name = req.Name; p.Description = req.Description; p.ImageUrl = req.ImageUrl;
+        p.SKU = req.SKU; p.Price = req.Price; p.CategoryId = req.CategoryId;
         await _db.SaveChangesAsync();
         await _cache.RemoveAsync("products:all");
         return NoContent();

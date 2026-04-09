@@ -86,7 +86,7 @@
     },
     {
       "UpstreamPathTemplate": "/api/inventory/{everything}",
-      "UpstreamHttpMethod": [ "GET", "PUT", "OPTIONS" ],
+      "UpstreamHttpMethod": [ "GET", "PUT", "POST", "OPTIONS" ],
       "DownstreamPathTemplate": "/api/inventory/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [ { "Host": "inventory-service", "Port": 5304 } ]
@@ -127,8 +127,29 @@
       "DownstreamHostAndPorts": [ { "Host": "delivery-service", "Port": 5306 } ]
     },
     {
-      "UpstreamPathTemplate": "/hubs/{everything}",
+      "UpstreamPathTemplate": "/api/payment/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/payment/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "payment-service", "Port": 5307 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/payment",
+      "UpstreamHttpMethod": [ "GET", "POST", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/payment",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "payment-service", "Port": 5307 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/hubs/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "OPTIONS" ],
+      "DownstreamPathTemplate": "/hubs/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "order-service", "Port": 5303 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/hubs/{everything}",
+      "UpstreamHttpMethod": [ "WS" ],
       "DownstreamPathTemplate": "/hubs/{everything}",
       "DownstreamScheme": "ws",
       "DownstreamHostAndPorts": [ { "Host": "order-service", "Port": 5303 } ]

@@ -28,6 +28,8 @@ export interface Order {
   totalAmount: number;
   status: string;
   shippingAddress: string;
+  paymentId?: string;
+  paymentStatus: string;
   items: OrderItem[];
 }
 
@@ -49,6 +51,13 @@ export interface User {
   contactNumber?: string;
   address?: string;
   createdAt: string;
+  // Wholesaler fields
+  enterpriseName?: string;
+  gstinNumber?: string;
+  creditPoints?: number;
+  weeklyUnitsPurchased?: number;
+  // Driver fields
+  vehicleType?: string;
 }
 
 export interface CartItem {
@@ -129,3 +138,16 @@ export interface RazorpayResponse {
   razorpay_order_id?: string;
   razorpay_signature?: string;
 }
+
+export interface Payment {
+  id: string;
+  orderId: string;
+  amount: number;
+  currency: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  status: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+

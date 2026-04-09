@@ -1,5 +1,7 @@
 using CocaColaB2B.Shared.DTOs;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using OrderService.Application.Interfaces;
 using OrderService.Domain.Entities;
 
@@ -11,43 +13,105 @@ public record AddToCartCommand(Guid UserId, AddToCartRequest Request) : IRequest
 public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, bool>
 {
     private readonly ICartRepository _repository;
+    private readonly IProductCatalogService _productCatalogService;
+    private readonly ILogger<AddToCartCommandHandler> _logger;
 
-    public AddToCartCommandHandler(ICartRepository repository) => _repository = repository;
+    public AddToCartCommandHandler(
+        ICartRepository repository,
+        IProductCatalogService productCatalogService,
+        ILogger<AddToCartCommandHandler> logger)
+    {
+        _repository = repository;
+        _productCatalogService = productCatalogService;
+        _logger = logger;
+    }
 
+    /// <summary>
+    /// BUG-2 FIX: Added retry logic for DbUpdateConcurrencyException.
+    /// If a concurrency conflict occurs (e.g., two rapid add-to-cart clicks),
+    /// we re-read the cart from the database and retry once.
+    /// </summary>
     public async Task<bool> Handle(AddToCartCommand message, CancellationToken cancellationToken)
     {
+        const int maxRetries = 2;
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            try
+            {
+                return await AddToCartCore(message, cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                _logger.LogWarning(ex,
+                    "Cart concurrency conflict for user {UserId} (attempt {Attempt}/{Max})",
+                    message.UserId, attempt + 1, maxRetries);
+
+                if (attempt == maxRetries - 1)
+                    throw; // Exhausted retries — let controller handle as 409
+
+                // Small delay before retry to let the conflicting transaction complete
+                await Task.Delay(100, cancellationToken);
+            }
+        }
+        return false; // Should never reach here
+    }
+
+    private async Task<bool> AddToCartCore(AddToCartCommand message, CancellationToken cancellationToken)
+    {
+        var req = message.Request;
+        if (req.ProductId == Guid.Empty)
+            throw new InvalidOperationException("Invalid product.");
+
+        // ── Backend quantity validation: minimum 10 ───────────────────────────
+        if (req.Quantity < 10)
+            throw new InvalidOperationException("Minimum order quantity is 10 units per product.");
+
+        // Validate product against ProductService and use trusted values from backend.
+        var product = await _productCatalogService.GetProductAsync(req.ProductId, cancellationToken);
+        if (product is null)
+            throw new InvalidOperationException("Product not found or unavailable.");
+
         var cart = await _repository.GetCartByUserIdAsync(message.UserId);
         if (cart == null)
         {
-            cart = new CartEntity { UserId = message.UserId };
+            cart = new CartEntity
+            {
+                UserId = message.UserId,
+                UpdatedAt = DateTime.UtcNow
+            };
+            cart.Items.Add(new CartItemEntity
+            {
+                CartId = cart.Id,
+                ProductId = product.Id,
+                ProductName = product.Name,
+                ProductPrice = product.Price,
+                Quantity = req.Quantity
+            });
             await _repository.AddCartAsync(cart);
+            return true;
         }
 
-        var req = message.Request;
         var existing = cart.Items.FirstOrDefault(i => i.ProductId == req.ProductId);
         if (existing != null)
         {
-            // Set quantity to requested value (not +=, to avoid doubling)
-            existing.Quantity = req.Quantity;
-            // Update product name and price if provided
-            if (!string.IsNullOrEmpty(req.ProductName)) existing.ProductName = req.ProductName;
-            if (req.ProductPrice > 0) existing.ProductPrice = req.ProductPrice;
+            existing.Quantity += req.Quantity;
+            existing.ProductName = product.Name;
+            existing.ProductPrice = product.Price;
         }
         else
         {
             cart.Items.Add(new CartItemEntity
             {
                 CartId = cart.Id,
-                ProductId = req.ProductId,
-                ProductName = !string.IsNullOrEmpty(req.ProductName) ? req.ProductName : "Product",
-                ProductPrice = req.ProductPrice,
+                ProductId = product.Id,
+                ProductName = product.Name,
+                ProductPrice = product.Price,
                 Quantity = req.Quantity
             });
         }
 
         cart.UpdatedAt = DateTime.UtcNow;
         await _repository.UpdateCartAsync(cart);
-
         return true;
     }
 }
@@ -68,8 +132,11 @@ public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemComman
 
         if (message.Quantity <= 0)
         {
-            // If quantity is 0 or less, remove the item
             await _repository.RemoveCartItemAsync(item);
+        }
+        else if (message.Quantity < 10)
+        {
+            throw new InvalidOperationException("Minimum order quantity is 10 units per product.");
         }
         else
         {

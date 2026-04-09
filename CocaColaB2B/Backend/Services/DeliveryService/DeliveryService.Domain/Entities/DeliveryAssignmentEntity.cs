@@ -2,7 +2,7 @@ namespace DeliveryService.Domain.Entities;
 
 public class DeliveryAssignmentEntity
 {
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     public Guid OrderId { get; set; }
     public Guid DriverId { get; set; }
     public string WholesalerName { get; set; } = "";

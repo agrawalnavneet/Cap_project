@@ -19,10 +19,14 @@ public class OrderApprovedConsumer : IConsumer<OrderStatusChangedEvent>
             {
                 OrderId = ev.OrderId,
                 DriverId = ev.DriverId.Value,
-                ShippingAddress = "",
+                // BUG-2 FIX: Now populated from the enriched event
+                WholesalerName = ev.WholesalerName,
+                ShippingAddress = ev.ShippingAddress,
+                OrderTotal = ev.OrderTotal,
                 Status = "Assigned"
             });
             await _db.SaveChangesAsync();
+            Console.WriteLine($"[DeliveryService] Delivery assigned for Order {ev.OrderId} to Driver {ev.DriverId}");
         }
     }
 }

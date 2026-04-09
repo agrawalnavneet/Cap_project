@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Product, Category, Order, User, Cart, DashboardStats, Notification, Delivery, Inventory } from '../models/models';
+import { Product, Category, Order, User, Cart, DashboardStats, Notification, Delivery, Inventory, Payment } from '../models/models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -26,6 +26,7 @@ export class ApiService {
   // Orders
   getOrders(): Observable<Order[]> { return this.http.get<Order[]>(`${this.api}/orders`); }
   getOrder(id: string): Observable<Order> { return this.http.get<Order>(`${this.api}/orders/${id}`); }
+  getOrderById(id: string): Observable<Order> { return this.http.get<Order>(`${this.api}/orders/${id}`); }
   placeOrder(data: any): Observable<Order> { return this.http.post<Order>(`${this.api}/orders`, data); }
   updateOrderStatus(id: string, data: any): Observable<void> { return this.http.put<void>(`${this.api}/orders/${id}/status`, data); }
 
@@ -35,6 +36,8 @@ export class ApiService {
   createUser(data: any): Observable<User> { return this.http.post<User>(`${this.api}/users`, data); }
   updateUser(id: string, data: any): Observable<void> { return this.http.put<void>(`${this.api}/users/${id}`, data); }
   deleteUser(id: string): Observable<void> { return this.http.delete<void>(`${this.api}/users/${id}`); }
+  grantCreditPoints(id: string, points: number): Observable<any> { return this.http.post<any>(`${this.api}/users/${id}/credit-points`, { points }); }
+  getCreditPoints(id: string): Observable<any> { return this.http.get<any>(`${this.api}/users/${id}/credit-points`); }
 
   // Cart
   getCart(): Observable<Cart> { return this.http.get<Cart>(`${this.api}/cart`); }
@@ -53,10 +56,16 @@ export class ApiService {
 
   // Delivery
   getDeliveries(): Observable<Delivery[]> { return this.http.get<Delivery[]>(`${this.api}/delivery`); }
+  getDeliveryById(id: string): Observable<Delivery> { return this.http.get<Delivery>(`${this.api}/delivery/${id}`); }
   updateDeliveryStatus(id: string, data: any): Observable<void> { return this.http.put<void>(`${this.api}/delivery/${id}/status`, data); }
 
   // Notifications
   getNotifications(): Observable<Notification[]> { return this.http.get<Notification[]>(`${this.api}/notifications`); }
   markNotificationRead(id: string): Observable<void> { return this.http.put<void>(`${this.api}/notifications/${id}/read`, {}); }
   markAllNotificationsRead(): Observable<void> { return this.http.put<void>(`${this.api}/notifications/read-all`, {}); }
+
+  // Payments
+  createPaymentOrder(data: { orderId: string; amount: number; currency?: string }): Observable<Payment> { return this.http.post<Payment>(`${this.api}/payment/create-order`, data); }
+  verifyPayment(data: { paymentId: string; razorpayPaymentId: string; razorpayOrderId: string; razorpaySignature: string }): Observable<Payment> { return this.http.post<Payment>(`${this.api}/payment/verify`, data); }
+  getPaymentByOrder(orderId: string): Observable<Payment> { return this.http.get<Payment>(`${this.api}/payment/order/${orderId}`); }
 }
