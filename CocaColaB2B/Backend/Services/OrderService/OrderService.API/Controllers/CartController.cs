@@ -44,17 +44,28 @@ public class CartController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(new { error = "Invalid cart payload." });
         var userId = TryGetUserId();
-        if (userId is null) return Unauthorized(new { error = "Invalid or missing user token." });
+        if (userId is null)
+        {
+            _logger.LogWarning("Unauthorized add-to-cart attempt — missing or invalid token");
+            return Unauthorized(new { error = "Invalid or missing user token." });
+        }
 
         try
         {
+            _logger.LogInformation("AddToCart request: user {UserId}, product {ProductId}, qty {Qty}",
+                userId, req.ProductId, req.Quantity);
             await _mediator.Send(new AddToCartCommand(userId.Value, req));
-            return Ok();
+            return Ok(new { message = "Item added to cart successfully." });
         }
         catch (DbUpdateConcurrencyException ex)
         {
-            _logger.LogWarning(ex, "Cart concurrency conflict for user {UserId}", userId);
-            return Conflict(new { error = "Your cart changed in another request. Please try again." });
+            _logger.LogWarning(ex, "Cart concurrency conflict for user {UserId} after all retries exhausted", userId);
+            return Conflict(new { error = "Your cart was updated by another request. Please refresh and try again.", retryable = false });
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogWarning(ex, "Cart database conflict for user {UserId}", userId);
+            return Conflict(new { error = "A temporary conflict occurred. Please try again.", retryable = true });
         }
         catch (InvalidOperationException ex)
         {

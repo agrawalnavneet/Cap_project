@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using OrderService.Application.Interfaces;
 using OrderService.Domain.Entities;
 using OrderService.Infrastructure.Data;
@@ -8,64 +9,65 @@ namespace OrderService.Infrastructure.Repositories;
 public class CartRepository : ICartRepository
 {
     private readonly OrderDbContext _context;
+    private readonly ILogger<CartRepository> _logger;
 
-    public CartRepository(OrderDbContext context)
+    public CartRepository(OrderDbContext context, ILogger<CartRepository> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<CartEntity?> GetCartByUserIdAsync(Guid userId)
     {
-        return await _context.Carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == userId);
+        return await _context.Carts
+            .Include(c => c.Items)
+            .FirstOrDefaultAsync(c => c.UserId == userId);
     }
 
     public async Task AddCartAsync(CartEntity cart)
     {
         await _context.Carts.AddAsync(cart);
         await _context.SaveChangesAsync();
+        _logger.LogInformation("Created new cart {CartId} for user {UserId}", cart.Id, cart.UserId);
     }
 
     /// <summary>
-    /// BUG-2 FIX: The old implementation tried to Attach an already-tracked entity,
-    /// which caused EF Core concurrency conflicts (DbUpdateConcurrencyException).
+    /// FIXED: Removed forced EntityState.Modified which caused DbUpdateConcurrencyException.
+    /// EF Core's change tracker automatically detects dirty properties on tracked entities.
+    /// Forcing EntityState.Modified caused ALL properties to be included in the UPDATE WHERE
+    /// clause (with original values), which fails when another request modified the same row.
     ///
-    /// Root cause: When GetCartByUserIdAsync loads the cart, EF Core starts tracking it.
-    /// When the handler adds a new CartItemEntity to cart.Items, the cart entity is already
-    /// in "Unchanged" state. The old code called Attach() which conflicts with existing tracking.
-    ///
-    /// Fix: Simply mark the cart as Modified (if tracked) and ensure new items are detected
-    /// by the change tracker. No need to Attach — EF Core already tracks the entity.
+    /// Fix: Let EF Core's automatic dirty-tracking handle modifications. Only explicitly
+    /// add new CartItemEntity objects that aren't yet tracked.
     /// </summary>
     public async Task UpdateCartAsync(CartEntity cart)
     {
-        // The cart was loaded via GetCartByUserIdAsync, so it's already tracked.
-        // Just update the timestamp and let EF Core detect new/modified items automatically.
         cart.UpdatedAt = DateTime.UtcNow;
+
+        // DO NOT force EntityState.Modified — let EF Core detect changes naturally.
+        // The cart is already tracked from GetCartByUserIdAsync, so any property
+        // changes (UpdatedAt, item quantity) are automatically detected.
 
         var entry = _context.Entry(cart);
         if (entry.State == EntityState.Detached)
         {
-            // Edge case: if somehow detached, re-attach + mark modified
+            // Edge case: entity was detached (e.g. after ClearTracking) — re-attach
             _context.Carts.Update(cart);
         }
-        else
-        {
-            // Already tracked — just mark modified so EF Core processes the update
-            entry.State = EntityState.Modified;
-        }
+        // else: already tracked (Unchanged/Modified) — EF Core handles it
 
-        // Ensure any new CartItemEntity objects added to cart.Items are detected as "Added"
+        // Ensure any new CartItemEntity objects added to cart.Items are tracked as Added
         foreach (var item in cart.Items)
         {
             var itemEntry = _context.Entry(item);
             if (itemEntry.State == EntityState.Detached)
             {
-                // New item not yet tracked — mark it as Added
                 _context.CartItems.Add(item);
             }
         }
 
         await _context.SaveChangesAsync();
+        _logger.LogInformation("Updated cart {CartId} — {ItemCount} items", cart.Id, cart.Items.Count);
     }
 
     public async Task<CartItemEntity?> GetCartItemByIdAsync(Guid itemId)

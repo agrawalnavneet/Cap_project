@@ -157,10 +157,15 @@ export class WholesalerCatalogComponent implements OnInit {
     }
   }
 
-  addToCart(product: Product, isRetry = false) {
+  addToCart(product: Product) {
     if (!product || !product.id) {
       this.errorMessage = 'Invalid product selected.';
       setTimeout(() => this.errorMessage = '', 4000);
+      return;
+    }
+
+    // Prevent duplicate clicks — bail if already adding this product
+    if (this.addingToCart[product.id]) {
       return;
     }
 
@@ -182,6 +187,7 @@ export class WholesalerCatalogComponent implements OnInit {
     }
 
     this.addingToCart[product.id] = true;
+    this.cdr.detectChanges();
 
     this.api.addToCart(payload).subscribe({
       next: () => {
@@ -191,14 +197,17 @@ export class WholesalerCatalogComponent implements OnInit {
         setTimeout(() => { this.addedMessage = ''; this.cdr.detectChanges(); }, 3000);
       },
       error: (err) => {
-        // BUG-2 FIX: Auto-retry once on 409 Conflict (concurrency)
-        if (err.status === 409 && !isRetry) {
-          console.warn('[Cart] Concurrency conflict — retrying automatically...');
-          setTimeout(() => this.addToCart(product, true), 300);
-          return;
-        }
         this.addingToCart[product.id] = false;
-        this.errorMessage = err?.error?.error || err?.error?.message || 'Failed to add to cart.';
+
+        if (err.status === 409) {
+          // Concurrency conflict — show friendly message, do NOT retry
+          this.errorMessage = 'Cart was updated. Please try adding the item again.';
+        } else if (err.status === 401) {
+          this.errorMessage = 'Session expired. Please log in again.';
+        } else {
+          this.errorMessage = err?.error?.error || err?.error?.message || 'Failed to add to cart.';
+        }
+
         this.cdr.detectChanges();
         setTimeout(() => { this.errorMessage = ''; this.cdr.detectChanges(); }, 5000);
       }

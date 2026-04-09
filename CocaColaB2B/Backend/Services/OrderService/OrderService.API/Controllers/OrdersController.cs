@@ -97,7 +97,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet("stats")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Wholesaler,WarehouseManager")]
     public async Task<ActionResult<DashboardStatsDto>> GetStats()
     {
         var stats = await _mediator.Send(new GetDashboardStatsQuery());

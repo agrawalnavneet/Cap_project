@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { ApiService } from '../../services/api.service';
+import { AuthService } from '../../services/auth.service';
 import { SignalRService } from '../../services/signalr.service';
 import { DashboardStats } from '../../models/models';
 
@@ -13,17 +14,23 @@ import { DashboardStats } from '../../models/models';
     <!-- Header Section -->
     <div class="dash-header">
       <div>
-        <h2 class="dash-title">Super Admin Dashboard</h2>
+        <h2 class="dash-title">{{ dashTitle }}</h2>
         <p class="dash-subtitle">Monitoring real-time flow across <span class="highlight">{{ stats?.totalUsers || 0 }} active users</span></p>
       </div>
-      <button class="btn-generate">
+      <button class="btn-generate" *ngIf="userRole === 'Admin'">
         <span class="material-symbols-outlined">add_circle</span>
         Generate Report
       </button>
     </div>
 
+    <!-- Access Notice for non-admin users -->
+    <div *ngIf="accessNotice" class="access-notice">
+      <span class="material-symbols-outlined">info</span>
+      {{ accessNotice }}
+    </div>
+
     <!-- Bento KPI Grid -->
-    <div class="kpi-grid">
+    <div class="kpi-grid" *ngIf="stats">
       <!-- KPI 1: Total Orders -->
       <div class="kpi-card">
         <div class="kpi-top">
@@ -91,7 +98,7 @@ import { DashboardStats } from '../../models/models';
     </div>
 
     <!-- Charts + Leaderboard Row -->
-    <div class="charts-row">
+    <div class="charts-row" *ngIf="stats">
       <!-- Daily Order Volume (Bar Chart) -->
       <div class="chart-area">
         <div class="chart-header">
@@ -134,7 +141,7 @@ import { DashboardStats } from '../../models/models';
     </div>
 
     <!-- Recent Orders Table -->
-    <div class="recent-orders-section">
+    <div class="recent-orders-section" *ngIf="stats">
       <div class="orders-header">
         <div>
           <h3 class="orders-title">Recent Orders</h3>
@@ -214,6 +221,24 @@ import { DashboardStats } from '../../models/models';
     }
     .btn-generate:hover { transform: scale(1.03); }
     .btn-generate:active { transform: scale(0.97); }
+
+    /* ─── Access Notice ───────────────────────────────────────── */
+    .access-notice {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      background: var(--surface-container-low);
+      border-left: 4px solid var(--tertiary);
+      border-radius: 8px;
+      color: var(--on-surface-variant);
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+    .access-notice .material-symbols-outlined {
+      color: var(--tertiary);
+      font-size: 22px;
+    }
 
     /* ─── KPI Grid ────────────────────────────────────────────── */
     .kpi-grid {
@@ -512,6 +537,8 @@ export class AdminHomeComponent implements OnInit, OnDestroy {
   isConnected = false;
   flashingOrderId: string | null = null;
   toastMessage = '';
+  accessNotice = '';
+  userRole = '';
   private subs: Subscription[] = [];
 
   // Static chart data
@@ -532,9 +559,24 @@ export class AdminHomeComponent implements OnInit, OnDestroy {
     { name: 'Phoenix Supply', value: '5.1k units', percent: 52 },
   ];
 
-  constructor(private apiService: ApiService, private signalR: SignalRService, private cdr: ChangeDetectorRef) {}
+  get dashTitle(): string {
+    switch (this.userRole) {
+      case 'Admin': return 'Super Admin Dashboard';
+      case 'Wholesaler': return 'Wholesaler Dashboard';
+      case 'WarehouseManager': return 'Warehouse Dashboard';
+      default: return 'Dashboard';
+    }
+  }
+
+  constructor(
+    private apiService: ApiService,
+    private authService: AuthService,
+    private signalR: SignalRService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
+    this.userRole = this.authService.userRole;
     this.loadStats();
 
     // Subscribe to SignalR events for real-time dashboard updates
@@ -563,9 +605,20 @@ export class AdminHomeComponent implements OnInit, OnDestroy {
     this.apiService.getDashboardStats().subscribe({
       next: (data) => {
         this.stats = data;
+        this.accessNotice = '';
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Failed to load stats', err)
+      error: (err) => {
+        if (err.status === 403) {
+          // User doesn't have permission — show friendly notice instead of console error
+          this.accessNotice = 'Dashboard statistics are not available for your role. Navigate to your section from the sidebar.';
+          console.info('[Dashboard] Stats not available for role:', this.userRole);
+        } else {
+          console.error('Failed to load stats', err);
+        }
+        this.cdr.detectChanges();
+      }
     });
   }
 }
+

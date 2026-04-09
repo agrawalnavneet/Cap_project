@@ -1038,6 +1038,8 @@
           "CocaColaB2B.Shared": "1.0.0",
           "MassTransit": "8.3.6",
           "MediatR": "12.4.1",
+          "Microsoft.EntityFrameworkCore": "10.0.5",
+          "Microsoft.EntityFrameworkCore.SqlServer": "10.0.5",
           "OrderService.Domain": "1.0.0"
         },
         "runtime": {

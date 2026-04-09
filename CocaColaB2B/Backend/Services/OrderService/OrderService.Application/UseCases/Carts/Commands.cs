@@ -27,13 +27,14 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, bool>
     }
 
     /// <summary>
-    /// BUG-2 FIX: Added retry logic for DbUpdateConcurrencyException.
-    /// If a concurrency conflict occurs (e.g., two rapid add-to-cart clicks),
-    /// we re-read the cart from the database and retry once.
+    /// Handles add-to-cart with retry logic for concurrency and race conditions.
+    /// - DbUpdateConcurrencyException: another request modified the same cart row
+    /// - DbUpdateException: race condition on cart creation (duplicate unique key)
+    /// On each retry, we clear the EF Core change tracker and re-fetch the latest state.
     /// </summary>
     public async Task<bool> Handle(AddToCartCommand message, CancellationToken cancellationToken)
     {
-        const int maxRetries = 2;
+        const int maxRetries = 3;
         for (int attempt = 0; attempt < maxRetries; attempt++)
         {
             try
@@ -43,16 +44,24 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, bool>
             catch (DbUpdateConcurrencyException ex)
             {
                 _logger.LogWarning(ex,
-                    "Cart concurrency conflict for user {UserId} (attempt {Attempt}/{Max})",
-                    message.UserId, attempt + 1, maxRetries);
+                    "Cart concurrency conflict for user {UserId}, product {ProductId} (attempt {Attempt}/{Max})",
+                    message.UserId, message.Request.ProductId, attempt + 1, maxRetries);
 
                 if (attempt == maxRetries - 1)
                     throw; // Exhausted retries — let controller handle as 409
 
-                // Small delay before retry to let the conflicting transaction complete
-                await Task.Delay(100, cancellationToken);
-                
-                // Clear the Entity Framework change tracker so the next loop fetches the newest Database version
+                await Task.Delay(150 * (attempt + 1), cancellationToken);
+                _repository.ClearTracking();
+            }
+            catch (DbUpdateException ex) when (attempt < maxRetries - 1)
+            {
+                // Race condition: two concurrent requests both tried to create a new cart
+                // for the same user, or insert duplicate cart items.
+                _logger.LogWarning(ex,
+                    "Cart DB conflict for user {UserId} (attempt {Attempt}/{Max}) — retrying with fresh state",
+                    message.UserId, attempt + 1, maxRetries);
+
+                await Task.Delay(150 * (attempt + 1), cancellationToken);
                 _repository.ClearTracking();
             }
         }
@@ -91,6 +100,9 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, bool>
                 Quantity = req.Quantity
             });
             await _repository.AddCartAsync(cart);
+            _logger.LogInformation(
+                "Created new cart for user {UserId} with product {ProductName} x{Qty}",
+                message.UserId, product.Name, req.Quantity);
             return true;
         }
 
@@ -100,6 +112,9 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, bool>
             existing.Quantity += req.Quantity;
             existing.ProductName = product.Name;
             existing.ProductPrice = product.Price;
+            _logger.LogInformation(
+                "Updated cart item for user {UserId}: {ProductName} quantity now {Qty}",
+                message.UserId, product.Name, existing.Quantity);
         }
         else
         {
@@ -111,6 +126,9 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, bool>
                 ProductPrice = product.Price,
                 Quantity = req.Quantity
             });
+            _logger.LogInformation(
+                "Added new item to cart for user {UserId}: {ProductName} x{Qty}",
+                message.UserId, product.Name, req.Quantity);
         }
 
         cart.UpdatedAt = DateTime.UtcNow;
