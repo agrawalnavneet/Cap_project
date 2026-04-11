@@ -44,25 +44,22 @@ public class CartRepository : ICartRepository
     {
         cart.UpdatedAt = DateTime.UtcNow;
 
-        // DO NOT force EntityState.Modified — let EF Core detect changes naturally.
-        // The cart is already tracked from GetCartByUserIdAsync, so any property
-        // changes (UpdatedAt, item quantity) are automatically detected.
+        // Simplify tracking. If the cart was loaded via GetCartByUserIdAsync,
+        // it and its Items collection are already tracked. EF Core will automatically
+        // detect new items added to cart.Items and modifications to existing items.
+        // We do not need to manually force state changes here.
 
         var entry = _context.Entry(cart);
         if (entry.State == EntityState.Detached)
         {
-            // Edge case: entity was detached (e.g. after ClearTracking) — re-attach
             _context.Carts.Update(cart);
-        }
-        // else: already tracked (Unchanged/Modified) — EF Core handles it
-
-        // Ensure any new CartItemEntity objects added to cart.Items are tracked as Added
-        foreach (var item in cart.Items)
-        {
-            var itemEntry = _context.Entry(item);
-            if (itemEntry.State == EntityState.Detached)
+            foreach (var item in cart.Items)
             {
-                _context.CartItems.Add(item);
+                var itemEntry = _context.Entry(item);
+                if (itemEntry.State == EntityState.Detached)
+                {
+                    _context.CartItems.Add(item);
+                }
             }
         }
 

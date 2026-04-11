@@ -82,9 +82,12 @@ public class CartController : ControllerBase
     [HttpPut("{itemId}")]
     public async Task<ActionResult> UpdateItem(Guid itemId, UpdateCartItemRequest req)
     {
+        var userId = TryGetUserId();
+        if (userId is null) return Unauthorized(new { error = "Invalid or missing user token." });
+
         try
         {
-            var success = await _mediator.Send(new UpdateCartItemCommand(itemId, req.Quantity));
+            var success = await _mediator.Send(new UpdateCartItemCommand(itemId, userId.Value, req.Quantity));
             if (!success) return NotFound();
             return Ok();
         }
@@ -97,7 +100,10 @@ public class CartController : ControllerBase
     [HttpDelete("{itemId}")]
     public async Task<ActionResult> RemoveItem(Guid itemId)
     {
-        var success = await _mediator.Send(new RemoveCartItemCommand(itemId));
+        var userId = TryGetUserId();
+        if (userId is null) return Unauthorized(new { error = "Invalid or missing user token." });
+
+        var success = await _mediator.Send(new RemoveCartItemCommand(itemId, userId.Value));
         if (!success) return NotFound();
         return NoContent();
     }

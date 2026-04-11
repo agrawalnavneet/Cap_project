@@ -556,15 +556,15 @@
               "target": "Package",
               "version": "[10.0.5, )"
             },
-            "Microsoft.AspNetCore.OpenApi": {
-              "target": "Package",
-              "version": "[10.0.2, )"
-            },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
               "version": "[10.0.5, )"
+            },
+            "Microsoft.OpenApi": {
+              "target": "Package",
+              "version": "[1.6.24, )"
             },
             "Serilog.AspNetCore": {
               "target": "Package",
@@ -584,7 +584,7 @@
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
-              "version": "[10.1.5, )"
+              "version": "[7.2.0, )"
             }
           },
           "imports": [

@@ -53,13 +53,14 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, bool>
                 await Task.Delay(150 * (attempt + 1), cancellationToken);
                 _repository.ClearTracking();
             }
-            catch (DbUpdateException ex) when (attempt < maxRetries - 1)
+            catch (DbUpdateException ex)
             {
-                // Race condition: two concurrent requests both tried to create a new cart
-                // for the same user, or insert duplicate cart items.
                 _logger.LogWarning(ex,
                     "Cart DB conflict for user {UserId} (attempt {Attempt}/{Max}) — retrying with fresh state",
                     message.UserId, attempt + 1, maxRetries);
+
+                if (attempt == maxRetries - 1)
+                    throw; // Exhausted retries
 
                 await Task.Delay(150 * (attempt + 1), cancellationToken);
                 _repository.ClearTracking();
@@ -79,9 +80,13 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, bool>
             throw new InvalidOperationException("Minimum order quantity is 10 units per product.");
 
         // Validate product against ProductService and use trusted values from backend.
+        _logger.LogInformation("Validating product {ProductId} from ProductService", req.ProductId);
         var product = await _productCatalogService.GetProductAsync(req.ProductId, cancellationToken);
         if (product is null)
-            throw new InvalidOperationException("Product not found or unavailable.");
+        {
+            _logger.LogWarning("Product validation failed for {ProductId} — ProductService returned null (product may not exist or service is unreachable)", req.ProductId);
+            throw new InvalidOperationException($"Product {req.ProductId} not found or ProductService is unavailable. Check OrderService logs for details.");
+        }
 
         var cart = await _repository.GetCartByUserIdAsync(message.UserId);
         if (cart == null)
@@ -138,7 +143,7 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, bool>
 }
 
 // ──── Update Cart Item Quantity ────
-public record UpdateCartItemCommand(Guid ItemId, int Quantity) : IRequest<bool>;
+public record UpdateCartItemCommand(Guid ItemId, Guid UserId, int Quantity) : IRequest<bool>;
 
 public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemCommand, bool>
 {
@@ -150,6 +155,11 @@ public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemComman
     {
         var item = await _repository.GetCartItemByIdAsync(message.ItemId);
         if (item == null) return false;
+
+        // Verify the item belongs to this user's cart
+        var cart = await _repository.GetCartByUserIdAsync(message.UserId);
+        if (cart == null || !cart.Items.Any(i => i.Id == message.ItemId))
+            throw new InvalidOperationException("Cart item not found in your cart.");
 
         if (message.Quantity <= 0)
         {
@@ -170,7 +180,7 @@ public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemComman
 }
 
 // ──── Remove Cart Item ────
-public record RemoveCartItemCommand(Guid ItemId) : IRequest<bool>;
+public record RemoveCartItemCommand(Guid ItemId, Guid UserId) : IRequest<bool>;
 
 public class RemoveCartItemCommandHandler : IRequestHandler<RemoveCartItemCommand, bool>
 {
@@ -182,6 +192,10 @@ public class RemoveCartItemCommandHandler : IRequestHandler<RemoveCartItemComman
     {
         var item = await _repository.GetCartItemByIdAsync(message.ItemId);
         if (item == null) return false;
+
+        var cart = await _repository.GetCartByUserIdAsync(message.UserId);
+        if (cart == null || !cart.Items.Any(i => i.Id == message.ItemId))
+            return false;
 
         await _repository.RemoveCartItemAsync(item);
         return true;

@@ -12,7 +12,6 @@
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/ProductService/ProductService.API/bin/Debug/net10.0/MediatR.dll
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/ProductService/ProductService.API/bin/Debug/net10.0/MediatR.Contracts.dll
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/ProductService/ProductService.API/bin/Debug/net10.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
-/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/ProductService/ProductService.API/bin/Debug/net10.0/Microsoft.AspNetCore.OpenApi.dll
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/ProductService/ProductService.API/bin/Debug/net10.0/Microsoft.Bcl.AsyncInterfaces.dll
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/ProductService/ProductService.API/bin/Debug/net10.0/Microsoft.Bcl.Cryptography.dll
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/ProductService/ProductService.API/bin/Debug/net10.0/Microsoft.Build.Framework.dll
@@ -186,3 +185,7 @@
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/ProductService/ProductService.API/bin/Debug/net10.0/Serilog.Sinks.Debug.dll
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/ProductService/ProductService.API/bin/Debug/net10.0/Serilog.Sinks.File.dll
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/ProductService/ProductService.API/bin/Debug/net10.0/Serilog.Sinks.Seq.dll
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/ProductService/ProductService.API/bin/Debug/net10.0/MassTransit.dll
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/ProductService/ProductService.API/bin/Debug/net10.0/MassTransit.Abstractions.dll
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/ProductService/ProductService.API/bin/Debug/net10.0/MassTransit.RabbitMqTransport.dll
+/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/ProductService/ProductService.API/bin/Debug/net10.0/RabbitMQ.Client.dll

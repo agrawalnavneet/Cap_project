@@ -201,7 +201,7 @@ export class WholesalerCatalogComponent implements OnInit {
 
         if (err.status === 409) {
           // Concurrency conflict — show friendly message, do NOT retry
-          this.errorMessage = 'Cart was updated. Please try adding the item again.';
+          this.errorMessage = err?.error?.error || 'Cart was updated. Please try adding the item again.';
         } else if (err.status === 401) {
           this.errorMessage = 'Session expired. Please log in again.';
         } else {

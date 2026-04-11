@@ -15,7 +15,6 @@
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/InventoryService/InventoryService.API/bin/Debug/net10.0/MediatR.dll
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/InventoryService/InventoryService.API/bin/Debug/net10.0/MediatR.Contracts.dll
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/InventoryService/InventoryService.API/bin/Debug/net10.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
-/Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/InventoryService/InventoryService.API/bin/Debug/net10.0/Microsoft.AspNetCore.OpenApi.dll
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/InventoryService/InventoryService.API/bin/Debug/net10.0/Microsoft.Bcl.AsyncInterfaces.dll
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/InventoryService/InventoryService.API/bin/Debug/net10.0/Microsoft.Bcl.Cryptography.dll
 /Users/navneetagarwal/Desktop/donet/Frontend/project/CocaColaB2B/Backend/Services/InventoryService/InventoryService.API/bin/Debug/net10.0/Microsoft.Build.Framework.dll
