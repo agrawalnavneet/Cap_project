@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+**/.git/
+**/.vs/
+**/TestResults/
+**/*.user
+**/.gitignore
+**/.dockerignore
+**/logs/
+**/*.md

@@ -1,0 +1,104 @@
+using Microsoft.EntityFrameworkCore;
+using SupplyChain.Notification.Application.Abstractions;
+using SupplyChain.Notification.Domain.Entities;
+
+namespace SupplyChain.Notification.Infrastructure.Persistence.Repositories;
+
+public class NotificationInboxRepository : INotificationInboxRepository
+{
+    private readonly NotificationDbContext _context;
+
+    public NotificationInboxRepository(NotificationDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<List<NotificationInbox>> GetInboxAsync(Guid dealerId, CancellationToken ct = default)
+    {
+        try
+        {
+            return await _context.NotificationInbox
+                .Where(n => n.DealerId == dealerId)
+                .OrderByDescending(n => n.CreatedAt)
+                .Take(50) // Return latest 50 for quick display
+                .ToListAsync(ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return new List<NotificationInbox>();
+        }
+    }
+
+    public async Task<int> GetUnreadCountAsync(Guid dealerId, CancellationToken ct = default)
+    {
+        try
+        {
+            return await _context.NotificationInbox
+                .CountAsync(n => n.DealerId == dealerId && !n.IsRead, ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return 0;
+        }
+    }
+
+    public async Task MarkAsReadAsync(Guid notificationId, Guid dealerId, CancellationToken ct = default)
+    {
+        var notification = await _context.NotificationInbox
+            .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.DealerId == dealerId, ct);
+
+        if (notification != null && !notification.IsRead)
+        {
+            notification.MarkAsRead();
+        }
+    }
+
+    public async Task MarkAllAsReadAsync(Guid dealerId, CancellationToken ct = default)
+    {
+        var unread = await _context.NotificationInbox
+            .Where(n => n.DealerId == dealerId && !n.IsRead)
+            .ToListAsync(ct);
+
+        foreach (var notification in unread)
+        {
+            notification.MarkAsRead();
+        }
+    }
+
+    public async Task AddAsync(NotificationInbox notification, CancellationToken ct = default)
+    {
+        await _context.NotificationInbox.AddAsync(notification, ct);
+    }
+
+    public async Task SaveChangesAsync(CancellationToken ct = default)
+    {
+        const int maxAttempts = 2;
+
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                await _context.SaveChangesAsync(ct);
+                return;
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (DbUpdateConcurrencyException ex) when (attempt < maxAttempts)
+            {
+                foreach (var entry in ex.Entries)
+                {
+                    var dbValues = await entry.GetDatabaseValuesAsync(ct);
+                    if (dbValues is null)
+                    {
+                        entry.State = EntityState.Detached;
+                        continue;
+                    }
+
+                    entry.OriginalValues.SetValues(dbValues);
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,290 @@
+services:
+
+  # ─── Infrastructure ───────────────────────────────────────────────────────────
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    environment:
+      SA_PASSWORD: "${DB_PASSWORD}"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - supplychain
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '${DB_PASSWORD}' -No -Q 'SELECT 1' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: supplychain_redis
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - supplychain
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: supplychain_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - supplychain
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # ─── Identity Service (Port 5002) ─────────────────────────────────────────────
+  identity-service:
+    build:
+      context: ./src
+      dockerfile: Services/Identity/SupplyChain.Identity.API/Dockerfile
+    container_name: identity_service
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      Jwt__Secret: "${JWT_SECRET}"
+      Jwt__Issuer: "${JWT_ISSUER}"
+      Jwt__Audience: "${JWT_AUDIENCE}"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=CocaCola_IdentityDb;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;"
+      SuperAdmin__Email: "admin@cocacola-b2b.com"
+      SuperAdmin__Password: "CocaCola@Admin2026!"
+      SuperAdmin__FullName: "CocaCola B2B Admin"
+      Email__SmtpHost: "smtp.gmail.com"
+      Email__SmtpPort: "587"
+      Email__Username: "${EMAIL_USERNAME}"
+      Email__Password: "${EMAIL_PASSWORD}"
+      Email__FromAddress: "${EMAIL_USERNAME}"
+      Email__FromName: "Coca-Cola B2B"
+      Redis__ConnectionString: "redis:6379"
+      Observability__LogsRoot: "logs"
+    ports:
+      - "5002:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - supplychain
+    restart: on-failure
+
+  # ─── Catalog Service (Port 5004) ──────────────────────────────────────────────
+  catalog-service:
+    build:
+      context: ./src
+      dockerfile: Services/Catalog/SupplyChain.Catalog.API/Dockerfile
+    container_name: catalog_service
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      Jwt__Secret: "${JWT_SECRET}"
+      Jwt__Issuer: "${JWT_ISSUER}"
+      Jwt__Audience: "${JWT_AUDIENCE}"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=CocaCola_CatalogDb;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;"
+      Redis__ConnectionString: "redis:6379"
+      Observability__LogsRoot: "logs"
+    ports:
+      - "5004:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - supplychain
+    restart: on-failure
+
+  # ─── Order Service (Port 5006) ────────────────────────────────────────────────
+  order-service:
+    build:
+      context: ./src
+      dockerfile: Services/Order/SupplyChain.Order.API/Dockerfile
+    container_name: order_service
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      Jwt__Secret: "${JWT_SECRET}"
+      Jwt__Issuer: "${JWT_ISSUER}"
+      Jwt__Audience: "${JWT_AUDIENCE}"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=CocaCola_OrderDb;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;"
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__Username: "guest"
+      RabbitMQ__Password: "guest"
+      ServiceUrls__PaymentService: "http://payment-service:8080"
+      ServiceUrls__IdentityService: "http://identity-service:8080"
+      ServiceUrls__CatalogService: "http://catalog-service:8080"
+      Observability__LogsRoot: "logs"
+    ports:
+      - "5006:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - supplychain
+    restart: on-failure
+
+  # ─── Logistics Service (Port 5008) ────────────────────────────────────────────
+  logistics-service:
+    build:
+      context: ./src
+      dockerfile: Services/Logistics/SupplyChain.Logistics.API/Dockerfile
+    container_name: logistics_service
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      Jwt__Secret: "${JWT_SECRET}"
+      Jwt__Issuer: "${JWT_ISSUER}"
+      Jwt__Audience: "${JWT_AUDIENCE}"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=CocaCola_LogisticsDb;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;"
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__Username: "guest"
+      RabbitMQ__Password: "guest"
+      Redis__ConnectionString: "redis:6379"
+      ServiceUrls__IdentityService: "http://identity-service:8080"
+      ServiceUrls__OrderService: "http://order-service:8080"
+      Observability__LogsRoot: "logs"
+    ports:
+      - "5008:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - supplychain
+    restart: on-failure
+
+  # ─── Payment Service (Port 5010) ──────────────────────────────────────────────
+  payment-service:
+    build:
+      context: ./src
+      dockerfile: Services/Payment/SupplyChain.Payment.API/Dockerfile
+    container_name: payment_service
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      Jwt__Secret: "${JWT_SECRET}"
+      Jwt__Issuer: "${JWT_ISSUER}"
+      Jwt__Audience: "${JWT_AUDIENCE}"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=CocaCola_PaymentDb;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;"
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__Username: "guest"
+      RabbitMQ__Password: "guest"
+      ServiceUrls__OrderService: "http://order-service:8080"
+      Razorpay__KeyId: "YOUR_RAZORPAY_KEY_ID"
+      Razorpay__KeySecret: "YOUR_RAZORPAY_KEY_SECRET"
+      Observability__LogsRoot: "logs"
+    ports:
+      - "5010:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - supplychain
+    restart: on-failure
+
+  # ─── Notification Service (Port 5012) ────────────────────────────────────────
+  notification-service:
+    build:
+      context: ./src
+      dockerfile: Services/Notification/SupplyChain.Notification.API/Dockerfile
+    container_name: notification_service
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      Jwt__Secret: "${JWT_SECRET}"
+      Jwt__Issuer: "${JWT_ISSUER}"
+      Jwt__Audience: "${JWT_AUDIENCE}"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=CocaCola_NotificationDb;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;"
+      RabbitMQ__Host: "rabbitmq"
+      RabbitMQ__Username: "guest"
+      RabbitMQ__Password: "guest"
+      Email__SmtpHost: "smtp.gmail.com"
+      Email__SmtpPort: "587"
+      Email__Username: "${EMAIL_USERNAME}"
+      Email__Password: "${EMAIL_PASSWORD}"
+      Email__FromAddress: "${EMAIL_USERNAME}"
+      Email__FromName: "Coca-Cola B2B"
+      Observability__LogsRoot: "logs"
+    ports:
+      - "5012:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - supplychain
+    restart: on-failure
+
+  # ─── API Gateway (Port 5000) ──────────────────────────────────────────────────
+  gateway:
+    build:
+      context: ./src
+      dockerfile: Gateway/SupplyChain.Gateway/Dockerfile
+    container_name: api_gateway
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      Jwt__Secret: "${JWT_SECRET}"
+      Jwt__Issuer: "${JWT_ISSUER}"
+      Jwt__Audience: "${JWT_AUDIENCE}"
+    ports:
+      - "5050:8080"
+    depends_on:
+      - identity-service
+      - catalog-service
+      - order-service
+      - logistics-service
+      - payment-service
+      - notification-service
+    networks:
+      - supplychain
+    restart: on-failure
+
+  # ─── Angular Frontend (Port 4200) ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ../../Frontend/Cococola.ui
+      dockerfile: Dockerfile
+    container_name: cocacola_frontend
+    ports:
+      - "4242:80"
+    depends_on:
+      - gateway
+    networks:
+      - supplychain
+    restart: on-failure
+
+# ──────────────────────────────────────────────────────────────────────────────
+volumes:
+  sqlserver_data:
+  redis_data:
+  rabbitmq_data:
+
+networks:
+  supplychain:
+    driver: bridge

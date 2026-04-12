@@ -1,0 +1,107 @@
+<div class="catalog">
+  <ccb2b-page-header title="Product Catalog" subtitle="Browse and order from our wholesale inventory"
+    [breadcrumbs]="[{label: 'Home', route: '/dealer/dashboard'}, {label: 'Catalog'}]">
+  </ccb2b-page-header>
+
+  <div class="catalog__layout">
+    <!-- Filter Panel -->
+    <aside class="catalog__filters glass-card">
+      <div class="filter-section">
+        <label class="filter-label">Search Products</label>
+        <div class="filter-search-wrap">
+          <input type="text" [ngModel]="searchTerm()" (ngModelChange)="onSearchChange($event)" 
+            placeholder="Search by name or SKU..." class="filter-input" />
+          <i-lucide name="search" class="search-icon"></i-lucide>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <label class="filter-label">Availability</label>
+        <div class="toggle-group">
+          <button [class.active]="!inStockOnly()" (click)="onStockToggle(false)">All</button>
+          <button [class.active]="inStockOnly()" (click)="onStockToggle(true)">In Stock</button>
+        </div>
+      </div>
+
+      <div class="filter-section" *ngIf="categories().length > 0">
+        <label class="filter-label">Category</label>
+        <div class="category-list">
+          <button *ngFor="let cat of categories()" 
+            [class.active]="selectedCategoryId() === cat.id"
+            (click)="onCategoryChange(cat.id)"
+            class="category-item">
+            <span class="category-icon" *ngIf="cat.icon">{{cat.icon}}</span>
+            {{ cat.name }}
+          </button>
+        </div>
+      </div>
+
+      <button *ngIf="hasActiveFilters()" class="filter-reset-btn" (click)="resetFilters()">
+        <i-lucide name="rotate-ccw" [size]="14"></i-lucide>
+        Reset Filters
+      </button>
+    </aside>
+
+    <!-- Product Grid -->
+    <div class="catalog__content">
+      @if (loading()) {
+        <div class="skeleton-grid">
+          <div *ngFor="let i of [1,2,3,4,5,6]" class="skeleton-card"></div>
+        </div>
+      } @else if (filteredProducts().length > 0) {
+        <div class="product-grid">
+          @for (product of filteredProducts(); track product.id) {
+            <div class="product-card premium-card">
+              <div class="product-card__image-container">
+                <img [src]="resolveImageUrl(product.imageUrl)" [alt]="product.name" class="product-image" />
+                <button class="favorite-btn" (click)="toggleFavorite(product.id)" [class.active]="favorites().has(product.id)">
+                  <i-lucide name="heart" [size]="18"></i-lucide>
+                </button>
+                <div class="stock-badge" [class.low-stock]="product.stockQuantity < 50 && product.stockQuantity > 0" [class.out-of-stock]="product.stockQuantity === 0">
+                  {{ product.stockQuantity === 0 ? 'Out of Stock' : (product.stockQuantity < 50 ? 'Low Stock' : 'In Stock') }}
+                </div>
+              </div>
+
+              <div class="product-card__content">
+                <div class="product-category">{{ product.categoryName }}</div>
+                <h3 class="product-name">{{ product.name }}</h3>
+                <div class="product-sku">{{ product.sku }}</div>
+
+                <div class="product-footer">
+                  <div class="product-price">
+                    <span class="currency">₹</span>
+                    <span class="amount">{{ product.price | number:'1.2-2' }}</span>
+                    <span class="unit">/ {{ product.unitOfMeasure }}</span>
+                  </div>
+
+                  @if (product.stockQuantity > 0) {
+                    <div class="product-actions">
+                      <div class="quantity-control">
+                        <button (click)="updateQty(product.id, -1)" [disabled]="getQty(product.id) <= 1">−</button>
+                        <span>{{ getQty(product.id) }}</span>
+                        <button (click)="updateQty(product.id, 1)">+</button>
+                      </div>
+                      <button class="add-to-cart-btn" (click)="addToCart(product)">
+                        <i-lucide name="shopping-cart" [size]="16"></i-lucide>
+                      </button>
+                    </div>
+                  } @else {
+                    <button class="notify-btn">Notify Me</button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+        <p class="results-count">Showing {{ filteredProducts().length }} products</p>
+      } @else {
+        <div class="empty-state">
+          <div class="empty-icon"><i-lucide name="package-search" [size]="48"></i-lucide></div>
+          <h3>No products found</h3>
+          <p>We couldn't find any products matching your current filters.</p>
+          <button (click)="resetFilters()" class="clear-filters-btn">Clear all filters</button>
+        </div>
+      }
+    </div>
+  </div>
+</div>

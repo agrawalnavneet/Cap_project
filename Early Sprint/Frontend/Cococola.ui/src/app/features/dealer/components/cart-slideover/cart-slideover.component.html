@@ -1,0 +1,151 @@
+<div class="cart">
+  <!-- Backdrop -->
+  @if (isOpen()) {
+    <div class="cart-backdrop" (click)="closeCart()"></div>
+  }
+
+  <!-- Payment Initializing Overlay -->
+  @if (initializingPayment()) {
+    <div class="payment-overlay">
+      <div class="payment-overlay__card glass-card">
+        <div class="payment-overlay__icon">
+          <i-lucide name="credit-card" [size]="32"></i-lucide>
+        </div>
+        <h3 class="payment-overlay__title">Opening Secure Gateway</h3>
+        <p class="payment-overlay__subtitle">Connecting to Razorpay...</p>
+        <div class="payment-overlay__dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Panel -->
+  <aside class="cart-panel" [class.cart-panel--open]="isOpen()">
+    <div class="cart-panel__header">
+      <div class="header-content">
+        <h3 class="title">Shopping Cart</h3>
+        <span class="count" *ngIf="count() > 0">{{ count() }} items</span>
+      </div>
+      <button class="close-btn" (click)="closeCart()">
+        <i-lucide name="x" [size]="20"></i-lucide>
+      </button>
+    </div>
+
+    <!-- Scrollable Body -->
+    <div class="cart-panel__body">
+      @if (items().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon"><i-lucide name="shopping-cart" [size]="48"></i-lucide></div>
+          <h3>Your cart is empty</h3>
+          <p>Treat yourself to something from our catalog!</p>
+          <button routerLink="/dealer/catalog" (click)="closeCart()" class="browse-btn">Browse Products</button>
+        </div>
+      } @else {
+        <div class="items-list">
+          @for (item of items(); track item.product.id) {
+            <div class="cart-item">
+              <div class="item-visual">
+                <div class="item-initial">{{ getProductInitial(item.product.name) }}</div>
+              </div>
+              <div class="item-info">
+                <h4 class="item-name">{{ item.product.name }}</h4>
+                <p class="item-sku">SKU: {{ item.product.sku }}</p>
+                
+                <div class="item-controls-row">
+                  <div class="qty-stepper">
+                    <button (click)="updateQty(item.product.id, item.quantity - 1)" [disabled]="item.quantity <= 1">
+                      <i-lucide name="minus" [size]="14"></i-lucide>
+                    </button>
+                    <span class="qty">{{ item.quantity }}</span>
+                    <button (click)="updateQty(item.product.id, item.quantity + 1)">
+                      <i-lucide name="plus" [size]="14"></i-lucide>
+                    </button>
+                  </div>
+                  <div class="price-wrap">
+                    <span class="unit-price">₹{{ item.product.price }} × {{ item.quantity }}</span>
+                    <span class="total-price">₹{{ item.product.price * item.quantity | number:'1.2-2' }}</span>
+                  </div>
+                </div>
+
+                @if (item.quantity < item.product.minOrderQuantity) {
+                  <p class="min-order-warn">Min order: {{ item.product.minOrderQuantity }}</p>
+                }
+              </div>
+              <button class="remove-btn" (click)="removeItem(item.product.id)">
+                <i-lucide name="trash-2" [size]="16"></i-lucide>
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Sticky Footer -->
+    @if (items().length > 0) {
+      <div class="cart-panel__footer">
+        <!-- Address Section -->
+        <div class="footer-section address-section">
+          <div class="section-header">
+            <label class="section-label"><i-lucide name="map-pin" [size]="14"></i-lucide> Delivery Address</label>
+            <button class="add-addr-btn" (click)="toggleInlineAddressForm()">
+              {{ showInlineAddressForm() ? 'Cancel' : '+ Add New' }}
+            </button>
+          </div>
+
+          @if (showInlineAddressForm()) {
+            <div class="inline-addr-form">
+              <!-- Inline form simplified for brevity in this example, assuming labels and models exist -->
+              <input type="text" [(ngModel)]="inlineAddrItems().label" placeholder="Label (Home/Work)" class="ccb2b-input-sm" />
+              <input type="text" [(ngModel)]="inlineAddrItems().streetLine1" placeholder="Street Address" class="ccb2b-input-sm" />
+              <!-- etc. -->
+              <button class="save-addr-btn" disabled>Save Address</button>
+            </div>
+          } @else {
+            <div class="addr-select-wrap">
+              <select [ngModel]="selectedAddressId()" (ngModelChange)="selectedAddressId.set($event)" class="hul-select">
+                <option value="" disabled>Choose an address...</option>
+                @for (addr of shippingAddresses(); track addr.addressId) {
+                  <option [value]="addr.addressId">{{ addr.label || addr.city }} ({{ addr.pinCode }})</option>
+                }
+              </select>
+            </div>
+            @if (selectedAddress()) {
+              <p class="addr-summary">{{ selectedAddress().addressLine1 }}, {{ selectedAddress().city }}</p>
+            }
+          }
+        </div>
+
+        <div class="footer-section order-summary">
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <span>₹{{ total() | number:'1.2-2' }}</span>
+          </div>
+          <div class="summary-row">
+            <span>GST (18%)</span>
+            <span>₹{{ gstAmount() | number:'1.2-2' }}</span>
+          </div>
+          <div class="summary-row total">
+            <span>Total Amount</span>
+            <span>₹{{ grandTotal() | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <div class="footer-section notes-section">
+          <textarea [ngModel]="notes()" (ngModelChange)="setNotes($event)" 
+            placeholder="Add special instructions for delivery..." class="notes-area"></textarea>
+        </div>
+
+        <button class="checkout-btn premium-btn" 
+          [disabled]="placing() || hasMinOrderIssue() || !selectedAddressId()" 
+          (click)="placeOrder()">
+          @if (placing()) { 
+            <span class="loader"></span> Processing... 
+          } @else {
+            Checkout with Razorpay <i-lucide name="arrow-right" [size]="18"></i-lucide>
+          }
+        </button>
+      </div>
+    }
+  </aside>
+</div>
