@@ -28,9 +28,10 @@ public class DeleteCategoryCommandHandler : IRequestHandler<DeleteCategoryComman
         var productsInCategory = await _productRepository.GetByCategoryAsync(command.CategoryId, ct);
         if (productsInCategory.Any())
         {
-            throw new InvalidOperationException(
-                $"Cannot delete category '{category.Name}' because it has {productsInCategory.Count} product(s) assigned to it. " +
-                "Please reassign or delete the products first.");
+            foreach (var product in productsInCategory)
+            {
+                await _productRepository.RemoveAsync(product, ct);
+            }
         }
 
         // Detach any sub-categories that reference this category as their parent
