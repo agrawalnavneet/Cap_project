@@ -40,9 +40,10 @@ public class PlaceOrderCommandHandler : IRequestHandler<PlaceOrderCommand, Place
 
         // Calculate subtotal for credit check (before shipping)
         var subtotal = command.Lines.Sum(l => l.UnitPrice * l.Quantity);
+        var gst = Math.Round(subtotal * 0.18m, 2);
 
-        // Credit check against Payment Service (subtotal + shipping)
-        var totalWithShipping = subtotal + shippingFee;
+        // Credit check against Payment Service (subtotal + gst + shipping)
+        var totalWithShipping = subtotal + gst + shippingFee;
         var creditCheck = await _paymentClient.CheckCreditAsync(command.DealerId, totalWithShipping, ct);
 
         // Commit inventory for the ordered quantities.

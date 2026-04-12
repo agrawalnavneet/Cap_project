@@ -55,7 +55,9 @@ public class Order
         if (!lines.Any())
             throw new DomainException("EMPTY_ORDER", "Order must have at least one line item.");
 
-        var totalAmount = lines.Sum(l => l.LineTotal) + shippingFee;
+        var subtotal = lines.Sum(l => l.LineTotal);
+        var gst = Math.Round(subtotal * 0.18m, 2);
+        var totalAmount = subtotal + gst + shippingFee;
 
         var order = new Order
         {

@@ -12,6 +12,8 @@ export interface Order {
   dealerId: string;
   dealerName?: string;
   items: any[];
+  lines?: any[];
+  totalItems?: number;
   shippingAddress: any;
   paymentDetails?: any;
   statusHistory?: any[];

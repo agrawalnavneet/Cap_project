@@ -194,8 +194,8 @@ services:
       RabbitMQ__Username: "guest"
       RabbitMQ__Password: "guest"
       ServiceUrls__OrderService: "http://order-service:8080"
-      Razorpay__KeyId: "YOUR_RAZORPAY_KEY_ID"
-      Razorpay__KeySecret: "YOUR_RAZORPAY_KEY_SECRET"
+      Razorpay__KeyId: "rzp_test_SUDVzwAKVeUa91"
+      Razorpay__KeySecret: "SnKTNaIx0gVd3NuYh2INkK8e"
       Observability__LogsRoot: "logs"
     ports:
       - "5010:8080"

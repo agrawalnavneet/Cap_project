@@ -26,8 +26,8 @@ export class CartService {
   paymentMode = computed(() => this._paymentMode());
   notes = computed(() => this._notes());
   
-  count = computed(() => this._items().reduce((sum, i) => sum + i.quantity, 0));
-  total = computed(() => this._items().reduce((sum, i) => sum + (i.product.unitPrice * i.quantity), 0));
+  count = computed(() => this._items().reduce((sum, i) => sum + Number(i.quantity || 0), 0));
+  total = computed(() => this._items().reduce((sum, i) => sum + (Number(i.product.price || 0) * Number(i.quantity || 0)), 0));
 
   constructor() {
     // Load state from localStorage on init
@@ -60,9 +60,9 @@ export class CartService {
 
   addToCart(product: any, quantity: number) {
     this._items.update(items => {
-      const existing = items.find(i => i.product.productId === product.productId);
+      const existing = items.find(i => i.product.id === product.id);
       if (existing) {
-        return items.map(i => i.product.productId === product.productId 
+        return items.map(i => i.product.id === product.id 
           ? { ...i, quantity: i.quantity + quantity } 
           : i);
       }
@@ -72,12 +72,12 @@ export class CartService {
   }
 
   removeFromCart(productId: string) {
-    this._items.update(items => items.filter(i => i.product.productId !== productId));
+    this._items.update(items => items.filter(i => i.product.id !== productId));
   }
 
   updateQuantity(productId: string, quantity: number) {
     this._items.update(items => items.map(i => 
-      i.product.productId === productId ? { ...i, quantity } : i));
+      i.product.id === productId ? { ...i, quantity } : i));
   }
 
   clearCart() {

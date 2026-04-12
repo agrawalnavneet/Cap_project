@@ -80,6 +80,12 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<LogisticsDbContext>();
     await db.Database.MigrateAsync();
     await LogisticsSeeder.SeedAsync(db);
+
+    var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+    recurringJobManager.AddOrUpdate<SlaMonitorJob>(
+        "sla-monitor",
+        job => job.ExecuteAsync(),
+        "*/5 * * * *"); // Every 5 minutes
 }
 
 if (app.Environment.IsDevelopment())
@@ -98,11 +104,6 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
 
-RecurringJob.AddOrUpdate<SlaMonitorJob>(
-    "sla-monitor",
-    job => job.ExecuteAsync(),
-    "*/5 * * * *"); // Every 5 minutes
 
 app.Run();
-
 

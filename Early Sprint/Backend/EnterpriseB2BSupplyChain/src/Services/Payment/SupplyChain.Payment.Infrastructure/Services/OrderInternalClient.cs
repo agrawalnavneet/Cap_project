@@ -2,27 +2,7 @@ using SupplyChain.SharedInfrastructure.Results;
 
 namespace SupplyChain.Payment.Infrastructure.Services;
 
-public interface IOrderInternalClient
-{
-    Task<OrderInvoiceDetailsDto?> GetInvoiceDetailsAsync(Guid orderId, CancellationToken ct);
-}
-
-public sealed record OrderInvoiceLineDto(
-    Guid ProductId,
-    string ProductName,
-    string SKU,
-    int Quantity,
-    decimal UnitPrice
-);
-
-public sealed record OrderInvoiceDetailsDto(
-    Guid OrderId,
-    Guid DealerId,
-    decimal TotalAmount,
-    string PaymentMode,
-    string? ShippingState,
-    List<OrderInvoiceLineDto> Lines
-);
+using SupplyChain.Payment.Application.Abstractions;
 
 public class OrderInternalClient : IOrderInternalClient
 {
@@ -44,6 +24,18 @@ public class OrderInternalClient : IOrderInternalClient
         catch
         {
             return null;
+        }
+    }
+
+    public async Task AdvanceToDispatchAsync(Guid orderId, CancellationToken ct)
+    {
+        try
+        {
+            await _httpClient.PutAsync($"/api/internal/orders/{orderId}/advance-to-dispatch", null, ct);
+        }
+        catch
+        {
+            // Best effort
         }
     }
 }

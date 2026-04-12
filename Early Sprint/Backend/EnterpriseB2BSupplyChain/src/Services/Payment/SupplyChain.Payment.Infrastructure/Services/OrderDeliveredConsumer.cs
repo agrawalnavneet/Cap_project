@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using SupplyChain.Payment.Application.Abstractions;
 using SupplyChain.Payment.Application.Commands.GenerateInvoice;
 using SupplyChain.Payment.Domain.Entities;
 using SupplyChain.Payment.Infrastructure.Persistence;

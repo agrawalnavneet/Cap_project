@@ -12,15 +12,18 @@ public class ConfirmRazorpayPaymentCommandHandler : IRequestHandler<ConfirmRazor
 {
     private readonly IConfiguration _configuration;
     private readonly IPaymentRecordRepository _paymentRecordRepository;
+    private readonly IOrderInternalClient _orderInternalClient;
     private readonly ILogger<ConfirmRazorpayPaymentCommandHandler> _logger;
 
     public ConfirmRazorpayPaymentCommandHandler(
         IConfiguration configuration,
         IPaymentRecordRepository paymentRecordRepository,
+        IOrderInternalClient orderInternalClient,
         ILogger<ConfirmRazorpayPaymentCommandHandler> logger)
     {
         _configuration = configuration;
         _paymentRecordRepository = paymentRecordRepository;
+        _orderInternalClient = orderInternalClient;
         _logger = logger;
     }
 
@@ -63,6 +66,9 @@ public class ConfirmRazorpayPaymentCommandHandler : IRequestHandler<ConfirmRazor
 
                 paymentRecord.MarkPaid(command.RazorpayPaymentId);
                 await _paymentRecordRepository.SaveChangesAsync(ct);
+
+                // Advance order to Trigger dispatch/logistics immediately since prepaid
+                await _orderInternalClient.AdvanceToDispatchAsync(orderId, ct);
             }
             catch (Exception ex)
             {

@@ -119,8 +119,15 @@ interface OrderStage {
               <span class="od-item-total">₹{{ (item.lineTotal || (item.unitPrice * item.quantity) || (item.price * item.quantity))?.toLocaleString('en-IN') }}</span>
             </div>
             <div class="od-items-total">
-              <span>Order Total</span>
-              <span class="od-items-total-val">₹{{ order.totalAmount?.toLocaleString('en-IN') }}</span>
+              <div class="od-breakdown">
+                <div class="od-breakdown-row"><span>Subtotal ({{ order.lines?.length || 0 }} items)</span><span>₹{{ getSubtotal() | number:'1.2-2' }}</span></div>
+                <div class="od-breakdown-row"><span>GST (18%)</span><span>₹{{ getGst() | number:'1.2-2' }}</span></div>
+                <div class="od-breakdown-row" *ngIf="order.shippingFee"><span>Shipping Fee</span><span>₹{{ order.shippingFee | number:'1.2-2' }}</span></div>
+              </div>
+              <div class="od-final-total">
+                <span>Order Total</span>
+                <span class="od-items-total-val">₹{{ order.totalAmount?.toLocaleString('en-IN') }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -373,7 +380,10 @@ interface OrderStage {
     .od-item-qty { font-size: 14px; font-weight: 600; color: var(--text-primary); text-align: center; }
     .od-item-price { font-size: 13px; color: var(--text-secondary); text-align: right; }
     .od-item-total { font-size: 14px; font-weight: 600; color: var(--text-primary); text-align: right; font-family: var(--font-display); }
-    .od-items-total { display: flex; justify-content: space-between; align-items: center; padding: 16px 12px 0; border-top: 2px solid var(--border-default); margin-top: 8px; font-size: 14px; font-weight: 700; color: var(--text-primary); }
+    .od-items-total { display: flex; flex-direction: column; padding: 16px 12px 0; border-top: 2px solid var(--border-default); margin-top: 8px; font-size: 14px; font-weight: 700; color: var(--text-primary); }
+    .od-breakdown { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; border-bottom: 1px dashed var(--border-default); padding-bottom: 12px; }
+    .od-breakdown-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+    .od-final-total { display: flex; justify-content: space-between; align-items: center; width: 100%; }
     .od-items-total-val { font-size: 20px; font-family: var(--font-display); color: var(--hul-primary); }
 
     /* ===== DELIVERY TRACKING ===== */
@@ -463,6 +473,15 @@ export class OrderDetailComponent implements OnInit, OnDestroy {
   ratingSubmitted = false;
   private orderId: string | null = null;
   private refreshHandle: ReturnType<typeof setInterval> | null = null;
+
+  getSubtotal(): number {
+    if (!this.order?.lines) return 0;
+    return this.order.lines.reduce((sum: number, item: any) => sum + (item.lineTotal || (item.unitPrice * item.quantity)), 0);
+  }
+
+  getGst(): number {
+    return this.getSubtotal() * 0.18;
+  }
 
   readonly orderStages: OrderStage[] = [
     { key: 'Placed',            label: 'Order Placed',         icon: '📋' },

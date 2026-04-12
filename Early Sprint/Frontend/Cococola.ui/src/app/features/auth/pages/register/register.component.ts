@@ -319,8 +319,14 @@ export class RegisterComponent {
         this.loading = false;
         if (err.status === 409) {
           this.serverError = err.error?.error || 'Email or GST already registered';
-        } else if (err.status === 400 && err.error?.errors) {
-          this.serverError = err.error.errors.map((e: any) => e.errorMessage).join('. ');
+        } else if (err.status === 400) {
+          if (err.error?.errors) {
+            this.serverError = err.error.errors.map((e: any) => e.errorMessage).join('. ');
+          } else if (err.error?.detail) {
+            this.serverError = err.error.detail;
+          } else {
+            this.serverError = 'Registration failed. Please check your inputs.';
+          }
         }
       }
     });

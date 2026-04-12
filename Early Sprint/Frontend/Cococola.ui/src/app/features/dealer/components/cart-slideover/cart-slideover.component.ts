@@ -43,9 +43,9 @@ export class CartSlideoverComponent implements OnInit {
   inlineAddrItems = signal({ label: '', streetLine1: '', city: '', state: '', pinCode: '', district: '' });
 
   // Computed state
-  gstAmount = computed(() => this.total() * 0.18);
+  gstAmount = computed(() => Number(this.total() || 0) * 0.18);
   shippingFee = signal(0);
-  grandTotal = computed(() => this.total() + this.gstAmount() + this.shippingFee());
+  grandTotal = computed(() => Number(this.total() || 0) + Number(this.gstAmount() || 0));
   hasMinOrderIssue = computed(() => this.items().some(i => i.quantity < i.product.minOrderQuantity));
   selectedAddress = computed(() => this.shippingAddresses().find(a => a.addressId === this.selectedAddressId()));
 
@@ -136,9 +136,11 @@ export class CartSlideoverComponent implements OnInit {
       const rzpOrder = await firstValueFrom(this.razorpayService.createOrder(orderId, amount));
       this.initializingPayment.set(false);
 
+      const totalRazorpayAmount = amount + (this.shippingFee() || 0);
+
       const options = {
-        key: 'rzp_test_SYJYgxSOWJyCJu',
-        amount: Math.round(amount * 100).toString(),
+        key: 'rzp_test_SUDVzwAKVeUa91',
+        amount: Math.round(totalRazorpayAmount * 100).toString(),
         currency: 'INR',
         name: 'Coca-Cola B2B Supply Portal',
         description: `Order Payment — ${orderId.substring(0, 8).toUpperCase()}`,

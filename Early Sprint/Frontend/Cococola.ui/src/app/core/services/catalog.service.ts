@@ -64,10 +64,19 @@ export class CatalogService {
     if (params?.searchTerm) queryParams.push(`searchTerm=${encodeURIComponent(params.searchTerm)}`);
     if (queryParams.length > 0) url += '?' + queryParams.join('&');
 
-    this.http.get<Product[]>(url)
+    this.http.get<any[]>(url)
       .pipe(finalize(() => this._loading.set(false)))
       .subscribe({
-        next: (data) => this._products.set(data),
+        next: (data) => {
+          const mapped = data.map(p => ({
+            ...p,
+            id: p.productId || p.id,
+            price: p.unitPrice || p.price,
+            stockQuantity: p.availableStock !== undefined ? p.availableStock : p.stockQuantity,
+            unitOfMeasure: 'unit'
+          }));
+          this._products.set(mapped);
+        },
         error: (err) => this._error.set(err.message)
       });
   }
