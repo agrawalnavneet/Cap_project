@@ -1,6 +1,6 @@
 import { ActionReducer, INIT, UPDATE } from '@ngrx/store';
 
-const CART_STORAGE_KEY = 'hul_cart_state';
+const CART_STORAGE_KEY = 'cocacola_b2b_cart_state';
 const CART_EXPIRY_DAYS = 7;
 
 export function storageSyncMetaReducer(reducer: ActionReducer<any>): ActionReducer<any> {

@@ -72,7 +72,12 @@ export class OrderService {
   }
 
   async cancelOrder(orderId: string, reason: string) {
-    // await firstValueFrom(this.http.put(API_ENDPOINTS.orders.cancel(orderId), { reason }));
-    await this.loadMyOrders();
+    this._loading.set(true);
+    try {
+      await firstValueFrom(this.http.put(API_ENDPOINTS.orders.cancelOrder(orderId), { reason }));
+      await this.loadMyOrders();
+    } finally {
+      this._loading.set(false);
+    }
   }
 }

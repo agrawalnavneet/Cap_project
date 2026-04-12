@@ -24,8 +24,8 @@ if (string.IsNullOrWhiteSpace(jwtSecret))
     throw new InvalidOperationException("Gateway JWT secret is not configured. Set Jwt:Secret.");
 }
 
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "UniSupplyPlatform";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "UniSupplyAPI";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "CocaColaB2BPlatform";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "CocaColaB2BAPI";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer("Bearer", options =>

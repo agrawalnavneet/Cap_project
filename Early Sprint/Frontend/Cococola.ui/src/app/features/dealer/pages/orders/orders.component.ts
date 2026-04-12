@@ -71,7 +71,7 @@ import { LucideAngularModule } from 'lucide-angular';
                       <span class="sub">{{ order.placedAt | date:'shortTime' }}</span>
                     </div>
                   </td>
-                  <td>{{ order.items?.length || 0 }} Items</td>
+                  <td>{{ order.items.length || 0 }} Items</td>
                   <td>
                     <span class="amount">₹{{ order.totalAmount | number:'1.2-2' }}</span>
                   </td>

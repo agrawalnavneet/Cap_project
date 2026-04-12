@@ -26,7 +26,7 @@ var configuredAudiences = builder.Configuration.GetSection("Jwt:Audiences").Get<
 var validAudiences = (configuredAudiences ?? Array.Empty<string>())
     .Concat(new[]
     {
-        builder.Configuration["Jwt:Audience"] ?? "UniSupplyAPI",
+        builder.Configuration["Jwt:Audience"] ?? "CocaColaB2BAPI",
         "gateway", "identity", "order", "catalog", "payment", "logistics", "notification"
     })
     .Where(a => !string.IsNullOrWhiteSpace(a))

@@ -31,7 +31,7 @@ export class CartService {
 
   constructor() {
     // Load state from localStorage on init
-    const saved = localStorage.getItem('hul_cart_state');
+    const saved = localStorage.getItem('cocacola_b2b_cart_state');
     if (saved) {
       try {
         const state = JSON.parse(saved);
@@ -50,7 +50,7 @@ export class CartService {
         paymentMode: this._paymentMode(),
         notes: this._notes()
       };
-      localStorage.setItem('hul_cart_state', JSON.stringify(state));
+      localStorage.setItem('cocacola_b2b_cart_state', JSON.stringify(state));
     });
   }
 

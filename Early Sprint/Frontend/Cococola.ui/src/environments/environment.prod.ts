@@ -1,11 +1,11 @@
 export const environment = {
   production: true,
-  gatewayUrl:         'https://api.hulsupply.in',
-  identityServiceUrl: 'https://api.hulsupply.in',
-  catalogServiceUrl:  'https://api.hulsupply.in',
-  orderServiceUrl:    'https://api.hulsupply.in',
-  logisticsServiceUrl:'https://api.hulsupply.in',
-  paymentServiceUrl:  'https://api.hulsupply.in',
-  notificationServiceUrl: 'https://api.hulsupply.in',
+  gatewayUrl:         'https://api.cocacola-b2b.in',
+  identityServiceUrl: 'https://api.cocacola-b2b.in',
+  catalogServiceUrl:  'https://api.cocacola-b2b.in',
+  orderServiceUrl:    'https://api.cocacola-b2b.in',
+  logisticsServiceUrl:'https://api.cocacola-b2b.in',
+  paymentServiceUrl:  'https://api.cocacola-b2b.in',
+  notificationServiceUrl: 'https://api.cocacola-b2b.in',
   useDirect: false
 };
