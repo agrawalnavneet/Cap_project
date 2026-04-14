@@ -12,7 +12,10 @@ public record ShipmentDashboardView(
     DateTime SlaDeadlineUtc,
     bool SlaAtRisk,
     DateTime? PickedUpAt,
-    DateTime? DeliveredAt
+    DateTime? DeliveredAt,
+    string? DealerName = null,
+    string? ShippingCity = null,
+    string? ShippingState = null
 )
 {
     public static ShipmentDashboardView FromDto(ShipmentDto dto) =>
@@ -26,7 +29,10 @@ public record ShipmentDashboardView(
             dto.SlaDeadlineUtc,
             dto.SlaAtRisk,
             dto.PickedUpAt,
-            dto.DeliveredAt
+            dto.DeliveredAt,
+            dto.DealerName,
+            dto.ShippingCity,
+            dto.ShippingState
         );
 }
 

@@ -10,5 +10,8 @@ public record ShipmentDto(
     DateTime SlaDeadlineUtc,
     bool     SlaAtRisk,
     DateTime? PickedUpAt,
-    DateTime? DeliveredAt
+    DateTime? DeliveredAt,
+    string?  DealerName = null,
+    string?  ShippingCity = null,
+    string?  ShippingState = null
 );

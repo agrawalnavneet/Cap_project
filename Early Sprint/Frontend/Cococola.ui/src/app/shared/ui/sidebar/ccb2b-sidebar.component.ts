@@ -25,19 +25,28 @@ export interface SidebarItem {
       </div>
 
       <nav class="sidebar__nav">
-        @for (item of menuItems; track item.label) {
+        <ng-container *ngFor="let item of menuItems; trackBy: trackByLabel">
           <div class="nav-group">
             <a [routerLink]="item.route" 
                routerLinkActive="active" 
-               [routerLinkActiveOptions]="{exact: item.route === '/dealer/dashboard'}"
+               [routerLinkActiveOptions]="{exact: item.route === '/dealer/dashboard' || item.route === '/admin/logistics'}"
                class="nav-item"
                [title]="collapsed ? item.label : ''">
               <i-lucide [name]="item.icon" [size]="20" class="nav-icon"></i-lucide>
               <span class="nav-label" *ngIf="!collapsed">{{ item.label }}</span>
               <span class="nav-badge" *ngIf="!collapsed && item.badge">{{ item.badge }}</span>
             </a>
+            <div class="nav-children" *ngIf="item.children && !collapsed">
+              <a *ngFor="let child of item.children"
+                 [routerLink]="child.route"
+                 routerLinkActive="active"
+                 class="nav-child-item">
+                 <i-lucide [name]="child.icon" [size]="16" class="nav-icon"></i-lucide>
+                 <span class="nav-label">{{ child.label }}</span>
+              </a>
+            </div>
           </div>
-        }
+        </ng-container>
       </nav>
 
       <div class="sidebar__footer">
@@ -213,6 +222,34 @@ export interface SidebarItem {
       }
     }
 
+    .nav-children {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-top: 4px;
+      margin-left: 36px;
+    }
+
+    .nav-child-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 0.2s;
+      
+      &:hover { color: var(--text-primary); }
+      &.active {
+        color: var(--hul-primary);
+        background: var(--hul-primary-light);
+        font-weight: 500;
+        .nav-icon { color: var(--hul-primary); }
+      }
+    }
+
     @media (max-width: 1024px) {
       .sidebar { transform: translateX(-100%); }
     }
@@ -239,6 +276,10 @@ export class CcbSidebarComponent {
   onLogout(): void {
     this.logoutClicked.emit();
     this.authService.logout();
+  }
+
+  trackByLabel(index: number, item: SidebarItem): string {
+    return item.label;
   }
 }
 

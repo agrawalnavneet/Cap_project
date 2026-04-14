@@ -1,4 +1,4 @@
-﻿import { Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ZoneHttpService } from '../../../../core/services/zone-http.service';
 import { API_ENDPOINTS } from '../../../../shared/constants/api-endpoints';
 import { CcbConfirmService } from '../../../../shared/ui/confirm-dialog/ccb2b-confirm.service';
@@ -14,7 +14,10 @@ import { ToastService } from '../../../../shared/ui/toast/toast.service';
         <div *ngIf="filtered.length === 0" class="empty-state">No pending shipments. Logistics is all clear. ✓</div>
         <div *ngFor="let s of filtered" class="shipment-card">
           <div class="shipment-card__header">
-            <span class="mono font-lg">{{ s.orderId?.substring(0,8) }}</span>
+            <div>
+               <span class="mono font-lg">{{ s.orderId?.substring(0,8) }}</span>
+               <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">{{ s.dealerName || 'Dealer' }} • {{ s.shippingCity || 'City' }}, {{ s.shippingState || 'State' }}</div>
+            </div>
             <ccb2b-status-badge [status]="s.status"></ccb2b-status-badge>
           </div>
           <div class="sla-row" [class.sla-row--urgent]="isUrgent(s)" [class.sla-row--critical]="isCritical(s)">
